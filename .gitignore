@@ -5,3 +5,5 @@ firebase-debug.log
 *.log
 .DS_Store
 .env
+.genkit/
+.gemini/
