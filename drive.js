@@ -3,14 +3,85 @@ import path from 'path';
 import os from 'os';
 import { google } from 'googleapis';
 import inquirer from 'inquirer';
+import { exec } from 'child_process';
+import util from 'util';
+
+const execPromise = util.promisify(exec);
 
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
 const TOKEN_PATH = path.join(CONFIG_DIR, 'gdrive_token.json');
 const CREDENTIALS_PATH = path.join(CONFIG_DIR, 'gdrive_credentials.json');
 const BACKUP_FOLDER_NAME = 'Multi-Wallet-Backups';
 
-// Scope for reading/writing files
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+
+// --- Rclone Logic ---
+
+async function checkRclone() {
+    try {
+        await execPromise('rclone version');
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+async function getRcloneRemotes() {
+    try {
+        const { stdout } = await execPromise('rclone listremotes');
+        return stdout.split('\n').filter(r => r.trim() !== '').map(r => r.replace(':', ''));
+    } catch (e) {
+        return [];
+    }
+}
+
+export async function setupRclone() {
+    console.log("\n📂 Rclone Backup Setup");
+    
+    if (!await checkRclone()) {
+        console.log("❌ Rclone is not installed. Please install it first:");
+        console.log("   Termux: pkg install rclone");
+        console.log("   Linux/Mac: curl https://rclone.org/install.sh | sudo bash");
+        return null;
+    }
+
+    const remotes = await getRcloneRemotes();
+    if (remotes.length === 0) {
+        console.log("⚠️  No Rclone remotes found. Please run 'rclone config' to set one up.");
+        return null;
+    }
+
+    const answer = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'remote',
+            message: 'Select Rclone Remote for Backup:',
+            choices: remotes
+        }
+    ]);
+
+    return answer.remote;
+}
+
+async function backupWithRclone(remoteName) {
+    console.log(`☁️  Backing up via Rclone (${remoteName})...`);
+    try {
+        const dest = `${remoteName}:${BACKUP_FOLDER_NAME}`;
+        
+        const files = ['my_wallets.json', 'settings.json'];
+        for (const file of files) {
+            const filePath = path.join(CONFIG_DIR, file);
+            if (fs.existsSync(filePath)) {
+                await execPromise(`rclone copy "${filePath}" "${dest}"`);
+            }
+        }
+        console.log("✅ Backup complete.");
+    } catch (e) {
+        console.log(`⚠️  Rclone backup failed: ${e.message}`);
+    }
+}
+
+// --- Google Drive API Logic ---
 
 function loadCredentials() {
     if (!fs.existsSync(CREDENTIALS_PATH)) return null;
@@ -36,14 +107,9 @@ function getAuthClient() {
 }
 
 export async function setupDrive() {
-    console.log("\n📂 Google Drive Backup Setup");
-    console.log("To enable backups, you need a Google Cloud Project with Drive API enabled.");
-    console.log("1. Go to https://console.cloud.google.com/");
-    console.log("2. Create a project > Enable 'Google Drive API'.");
-    console.log("3. Create Credentials > OAuth Client ID > Desktop App.");
-    console.log("4. Download the JSON file.");
-
-    // 1. Get Credentials
+    console.log("\n📂 Google Drive API Setup");
+    console.log("To enable native backups, you need a Google Cloud Project with Drive API enabled.");
+    
     if (!fs.existsSync(CREDENTIALS_PATH)) {
         const answer = await inquirer.prompt([{ 
             type: 'input',
@@ -58,7 +124,6 @@ export async function setupDrive() {
             } else {
                 content = answer.path;
             }
-            // Validate JSON
             const json = JSON.parse(content);
             if (!json.installed && !json.web) throw new Error("Invalid structure");
             
@@ -70,7 +135,6 @@ export async function setupDrive() {
         }
     }
 
-    // 2. Authorize
     const oAuth2Client = getAuthClient();
     if (!oAuth2Client) return;
 
@@ -109,7 +173,6 @@ async function findOrCreateFolder(drive, folderName) {
         return res.data.files[0].id;
     }
 
-    // Create
     const fileMetadata = {
         name: folderName,
         mimeType: 'application/vnd.google-apps.folder',
@@ -125,25 +188,19 @@ export async function backupToDrive() {
     const auth = getAuthClient();
     const token = loadToken();
     
-    if (!auth || !token) {
-        // Not configured, silent return or log if verbose?
-        // console.log("Drive backup skipped (not configured).");
-        return;
-    }
+    if (!auth || !token) return;
 
-    console.log("☁️  Backing up to Google Drive...");
+    console.log("☁️  Backing up to Google Drive (Native)...");
     const drive = google.drive({ version: 'v3', auth });
 
     try {
         const folderId = await findOrCreateFolder(drive, BACKUP_FOLDER_NAME);
-        
         const filesToBackup = ['my_wallets.json', 'settings.json'];
         
         for (const fileName of filesToBackup) {
             const filePath = path.join(CONFIG_DIR, fileName);
             if (!fs.existsSync(filePath)) continue;
 
-            // Check if file exists in folder
             const res = await drive.files.list({
                 q: `name='${fileName}' and '${folderId}' in parents and trashed=false`,
                 fields: 'files(id, name)',
@@ -155,28 +212,30 @@ export async function backupToDrive() {
             };
 
             if (res.data.files.length > 0) {
-                // Update
-                const fileId = res.data.files[0].id;
                 await drive.files.update({
-                    fileId: fileId,
+                    fileId: res.data.files[0].id,
                     media: media,
                 });
-                // console.log(`   Updated ${fileName}`);
             } else {
-                // Create
                 await drive.files.create({
-                    resource: {
-                        name: fileName,
-                        parents: [folderId],
-                    },
+                    resource: { name: fileName, parents: [folderId] },
                     media: media,
                     fields: 'id',
                 });
-                // console.log(`   Created ${fileName}`);
             }
         }
         console.log("✅ Backup complete.");
     } catch (e) {
-        console.log(`⚠️  Backup failed: ${e.message}`);
+        console.log(`⚠️  Native Backup failed: ${e.message}`);
+    }
+}
+
+// --- Unified Export ---
+
+export async function triggerBackup(settings) {
+    if (settings.backupMethod === 'rclone' && settings.rcloneRemote) {
+        await backupWithRclone(settings.rcloneRemote);
+    } else if (settings.backupMethod === 'gapi') {
+        await backupToDrive();
     }
 }

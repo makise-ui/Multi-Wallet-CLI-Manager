@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { SignClient } from "@walletconnect/sign-client";
 import os from 'os';
 import path from 'path';
-import { setupDrive, backupToDrive } from './drive.js';
+import { setupDrive, setupRclone, triggerBackup } from './drive.js';
 
 const PROJECT_ID = "524436d5d820c6fc4e8076acc513bd3c";
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
@@ -21,6 +21,8 @@ let USER_SETTINGS = {
     currency: 'USD',
     defaultNetwork: 'ethereum',
     gasLimitBuffer: '0',
+    backupMethod: null, // 'rclone' or 'gapi'
+    rcloneRemote: null,
     savedTokens: [] // { symbol: "USDT", address: "0x...", network: "bsc", decimals: 18 }
 };
 
@@ -34,7 +36,7 @@ if (fs.existsSync(SETTINGS_FILE)) {
 
 function saveSettings() {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(USER_SETTINGS, null, 2));
-    backupToDrive();
+    triggerBackup(USER_SETTINGS);
 }
 
 // Supported Networks
@@ -146,17 +148,43 @@ async function changeSettings() {
                 'Default Network',
                 'Gas Limit Buffer (Advanced)',
                 'Manage Custom Tokens',
-                'Setup Google Drive Backup',
+                'Backup Configuration',
                 'Back'
             ]
         }
     ]);
 
     if (action.setting === 'Back') return;
-    if (action.setting === 'Setup Google Drive Backup') {
-        await setupDrive();
+    
+    if (action.setting === 'Backup Configuration') {
+        const type = await inquirer.prompt([
+            {
+                type: 'rawlist',
+                name: 'method',
+                message: 'Select Backup Method:',
+                choices: ['Rclone (Recommended)', 'Google Drive Native API', 'Disable Backup']
+            }
+        ]);
+
+        if (type.method === 'Rclone (Recommended)') {
+            const remote = await setupRclone();
+            if (remote) {
+                USER_SETTINGS.backupMethod = 'rclone';
+                USER_SETTINGS.rcloneRemote = remote;
+                console.log(`✅ Backup configured using Rclone remote: ${remote}`);
+            }
+        } else if (type.method === 'Google Drive Native API') {
+            await setupDrive();
+            USER_SETTINGS.backupMethod = 'gapi';
+            console.log("✅ Backup configured using Native API.");
+        } else {
+            USER_SETTINGS.backupMethod = null;
+            console.log("🚫 Backup disabled.");
+        }
+        saveSettings();
         return;
     }
+
     if (action.setting === 'Manage Custom Tokens') {
         await manageTokens();
         return;
@@ -285,7 +313,7 @@ async function initializeWallets() {
         
         fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
         console.log("✅ All wallets encrypted and saved!");
-        await backupToDrive();
+        await triggerBackup(USER_SETTINGS);
     } else {
         // Decrypt existing
         console.log("🔐 Wallets are encrypted.");
@@ -326,7 +354,7 @@ async function saveEncryptedWallet(name, wallet) {
     // Update memory
     DECRYPTED_WALLETS.push({ name: name, wallet: wallet });
     console.log(`✅ Wallet '${name}' saved securely.`);
-    await backupToDrive();
+    await triggerBackup(USER_SETTINGS);
 }
 
 async function createNewWallet() {
@@ -442,7 +470,7 @@ async function renameWallet() {
     
     fs.writeFileSync(WALLETS_FILE, JSON.stringify(newRawStore, null, 2));
     console.log("✅ Wallet renamed.");
-    await backupToDrive();
+    await triggerBackup(USER_SETTINGS);
 }
 
 async function listWallets() {
