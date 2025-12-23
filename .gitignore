@@ -1,0 +1,7 @@
+node_modules/
+my_wallets.json
+settings.json
+firebase-debug.log
+*.log
+.DS_Store
+.env
