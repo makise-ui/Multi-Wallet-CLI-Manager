@@ -16,6 +16,7 @@
   "dependencies": {
     "@walletconnect/sign-client": "^2.23.1",
     "ethers": "^6.16.0",
+    "googleapis": "^168.0.0",
     "inquirer": "^13.1.0"
   }
 }

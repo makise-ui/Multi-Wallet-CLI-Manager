@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { SignClient } from "@walletconnect/sign-client";
 import os from 'os';
 import path from 'path';
+import { setupDrive, backupToDrive } from './drive.js';
 
 const PROJECT_ID = "524436d5d820c6fc4e8076acc513bd3c";
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
@@ -33,6 +34,7 @@ if (fs.existsSync(SETTINGS_FILE)) {
 
 function saveSettings() {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(USER_SETTINGS, null, 2));
+    backupToDrive();
 }
 
 // Supported Networks
@@ -144,12 +146,17 @@ async function changeSettings() {
                 'Default Network',
                 'Gas Limit Buffer (Advanced)',
                 'Manage Custom Tokens',
+                'Setup Google Drive Backup',
                 'Back'
             ]
         }
     ]);
 
     if (action.setting === 'Back') return;
+    if (action.setting === 'Setup Google Drive Backup') {
+        await setupDrive();
+        return;
+    }
     if (action.setting === 'Manage Custom Tokens') {
         await manageTokens();
         return;
@@ -278,6 +285,7 @@ async function initializeWallets() {
         
         fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
         console.log("✅ All wallets encrypted and saved!");
+        await backupToDrive();
     } else {
         // Decrypt existing
         console.log("🔐 Wallets are encrypted.");
@@ -318,6 +326,7 @@ async function saveEncryptedWallet(name, wallet) {
     // Update memory
     DECRYPTED_WALLETS.push({ name: name, wallet: wallet });
     console.log(`✅ Wallet '${name}' saved securely.`);
+    await backupToDrive();
 }
 
 async function createNewWallet() {
@@ -433,6 +442,7 @@ async function renameWallet() {
     
     fs.writeFileSync(WALLETS_FILE, JSON.stringify(newRawStore, null, 2));
     console.log("✅ Wallet renamed.");
+    await backupToDrive();
 }
 
 async function listWallets() {
