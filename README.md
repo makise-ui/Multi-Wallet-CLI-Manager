@@ -12,6 +12,7 @@ A powerful, secure, and headless CLI tool to manage multiple crypto wallets, con
     *   Transfer Assets (ETH, BNB, USDT, JMPT, etc.).
     *   Fiat Values (Real-time prices via CoinGecko).
 *   **🔄 Built-in Swaps**: Swap tokens (e.g., JMPT -> BNB) directly in the CLI (beta).
+*   **☁️ Cloud Backups**: Automatically backup your encrypted wallets to **Google Drive** using Rclone or the native Google Drive API.
 *   **⚙️ Customizable**: Set default networks, gas buffers, and add custom tokens.
 
 ## 🛠️ Installation
@@ -57,6 +58,14 @@ node cli.js
 5.  Choose your wallet and paste the URI.
 6.  Approve the connection and sign requests directly from the terminal!
 
+### ☁️ Cloud Backups
+Keep your wallets safe by enabling automatic backups to Google Drive.
+1.  Go to **Settings** -> **Backup Configuration**.
+2.  Choose your preferred method:
+    *   **Rclone (Recommended)**: Uses the `rclone` utility installed on your system. Fast and reliable.
+    *   **Google Drive Native API**: Connects directly via Google's OAuth flow.
+3.  Once configured, your data is backed up every time you create, import, or rename a wallet.
+
 ## 📂 Configuration
 
 Your data is stored securely in your home directory:
@@ -65,7 +74,9 @@ Your data is stored securely in your home directory:
 
 **Files:**
 *   `my_wallets.json`: Encrypted wallet data.
-*   `settings.json`: Your preferences (Currency, Default Network, Saved Tokens).
+*   `settings.json`: Your preferences (Currency, Default Network, Saved Tokens, Backup Method).
+*   `gdrive_token.json`: (If using Native API) Google OAuth tokens.
+*   `gdrive_credentials.json`: (If using Native API) Google Cloud Project credentials.
 
 ## 🛡️ Security Note
 
