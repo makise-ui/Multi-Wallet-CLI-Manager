@@ -835,7 +835,7 @@ async function swapToken() {
 
 // --- WalletConnect Logic ---
 
-async function connectWallet() {
+async function connectWallet(predefinedUri = null) {
   const wallets = await listWallets();
   if (wallets.length === 0) return;
 
@@ -856,14 +856,18 @@ async function connectWallet() {
   const selectedWalletData = DECRYPTED_WALLETS.find(w => w.wallet.address === walletChoice.walletAddress);
   const signer = selectedWalletData.wallet;
 
-  const uriAnswer = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'uri',
-      message: 'Paste the WalletConnect URI (wc:...):',
-      validate: (input) => input.startsWith('wc:') || 'Invalid URI, must start with wc:'
-    }
-  ]);
+  let uri = predefinedUri;
+  if (!uri) {
+      const uriAnswer = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'uri',
+          message: 'Paste the WalletConnect URI (wc:...):',
+          validate: (input) => input.startsWith('wc:') || 'Invalid URI, must start with wc:'
+        }
+      ]);
+      uri = uriAnswer.uri;
+  }
 
   console.log(`\n🔌 Initializing WalletConnect with ${selectedWalletData.name}...\n`);
   
@@ -1027,7 +1031,7 @@ async function connectWallet() {
       });
 
       try {
-          await client.pair({ uri: uriAnswer.uri });
+          await client.pair({ uri: uri });
           console.log("⏳ Pairing request sent. Check the dApp...");
       } catch (e) {
           console.error("❌ Pairing Error:", e.message);
@@ -1041,6 +1045,14 @@ async function connectWallet() {
 async function main() {
   console.log("\n🚀 Multi-Wallet CLI Manager");
   await initializeWallets();
+  
+  // Check for direct WC URI in args
+  const wcArg = process.argv.find(arg => arg.startsWith('wc:'));
+  if (wcArg) {
+      console.log("🔗 Direct Connection Mode detected.");
+      await connectWallet(wcArg);
+      process.exit(0);
+  }
   
   while (true) {
     const answer = await inquirer.prompt([

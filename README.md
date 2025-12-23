@@ -41,7 +41,13 @@ Run the tool:
 # If linked:
 my-wallet
 
-# Or directly:
+# Direct Connection (Skip menu):
+my-wallet "wc:8e5c..."
+
+# Verbose Mode (Debug logs):
+my-wallet -v
+
+# Or directly via node:
 node cli.js
 ```
 
