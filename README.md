@@ -6,14 +6,16 @@ A powerful, secure, and headless CLI tool to manage multiple crypto wallets, con
 
 *   **🔐 Secure Storage**: Wallets are encrypted with a vault password and stored locally in `~/.my-cli-wallet/`.
 *   **🔌 WalletConnect v2**: Connect to any dApp (Uniswap, PancakeSwap, OpenSea, etc.) by pasting a `wc:` URI.
-*   **⛓️ Multi-Chain Support**: Native support for **Ethereum**, **Binance Smart Chain (BSC)**, **Polygon**, and **Celo**.
-*   **💸 Asset Management**:
-    *   Check Balances (Native & Tokens).
-    *   Transfer Assets (ETH, BNB, USDT, JMPT, etc.).
-    *   Fiat Values (Real-time prices via CoinGecko).
-*   **🔄 Built-in Swaps**: Swap tokens (e.g., JMPT -> BNB) directly in the CLI (beta).
-*   **☁️ Cloud Backups**: Automatically backup your encrypted wallets to **Google Drive** using Rclone or the native Google Drive API.
-*   **⚙️ Customizable**: Set default networks, gas buffers, and add custom tokens.
+
+## 📋 Prerequisites
+
+To build or modify this tool, you need a **WalletConnect Project ID**:
+1.  Go to [WalletConnect Cloud](https://cloud.walletconnect.com/).
+2.  Sign up and create a new project.
+3.  Copy the **Project ID**.
+4.  Replace the `PROJECT_ID` constant in `cli.js` with yours.
+
+## ⛓️ Multi-Chain Support
 
 ## 🛠️ Installation
 

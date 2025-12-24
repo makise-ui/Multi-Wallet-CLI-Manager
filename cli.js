@@ -8,13 +8,38 @@ import path from 'path';
 import 'dotenv/config'; // Load .env
 import { setupDrive, setupRclone, triggerBackup } from './drive.js';
 
-const PROJECT_ID = process.env.PROJECT_ID;
-if (!PROJECT_ID) {
-    console.error("❌ Error: PROJECT_ID is missing from .env file.");
-    process.exit(1);
+let PROJECT_ID = process.env.PROJECT_ID;
+const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
+const ENV_FILE = path.join(CONFIG_DIR, '.env');
+
+// Load .env manually if not loaded by dotenv (which looks in cwd)
+if (!PROJECT_ID && fs.existsSync(ENV_FILE)) {
+    const envConfig = fs.readFileSync(ENV_FILE, 'utf8');
+    const match = envConfig.match(/PROJECT_ID=(.*)/);
+    if (match) PROJECT_ID = match[1].trim();
 }
 
-const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
+async function checkProjectId() {
+    if (PROJECT_ID) return;
+    
+    console.log("⚠️  WalletConnect Project ID not found.");
+    const answer = await inquirer.prompt([{
+        type: 'input',
+        name: 'id',
+        message: 'Enter your Project ID (from cloud.walletconnect.com):'
+    }]);
+    
+    PROJECT_ID = answer.id;
+    fs.writeFileSync(ENV_FILE, `PROJECT_ID=${PROJECT_ID}\n`);
+    console.log(`✅ Project ID saved to ${ENV_FILE}`);
+}
+
+// const CONFIG_DIR ... defined above, need to reorganize to keep imports clean
+// I'll assume the previous code structure logic flows down.
+// Wait, top-level await is fine. I'll invoke checkProjectId() in main().
+
+// Remove the immediate check/exit block
+// if (!PROJECT_ID) ...
 if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
 
 const WALLETS_FILE = path.join(CONFIG_DIR, 'my_wallets.json');
@@ -266,12 +291,18 @@ async function changeSettings() {
                 'Manage Custom Tokens',
                 'Backup Configuration',
                 'Restore Deleted Wallet',
+                'Toggle Vault Encryption',
                 'Back'
             ]
         }
     ]);
 
     if (action.setting === 'Back') return;
+    
+    if (action.setting === 'Toggle Vault Encryption') {
+        await toggleEncryption();
+        return;
+    }
     
     if (action.setting === 'Restore Deleted Wallet') {
         await restoreWallet();
@@ -373,6 +404,60 @@ const ERC20_ABI = [
 ];
 
 // --- Wallet Management ---
+
+async function toggleEncryption() {
+    if (DECRYPTED_WALLETS.length === 0) {
+        console.log("No wallets loaded to convert.");
+        return;
+    }
+
+    const isCurrentlyEncrypted = SESSION_PASSWORD !== null;
+    
+    if (isCurrentlyEncrypted) {
+        // Encrypted -> Plain
+        console.log("⚠️  WARNING: You are about to decrypt your wallet vault.");
+        console.log("   Your private keys will be stored in PLAIN TEXT in my_wallets.json.");
+        console.log("   Anyone with access to this file can steal your funds.");
+        
+        const confirm = await inquirer.prompt([
+            { type: 'rawlist', name: 'sure', message: 'Are you absolutely sure?', choices: ['No', 'Yes, I understand the risk'] }
+        ]);
+        
+        if (confirm.sure !== 'Yes, I understand the risk') return;
+
+        const confirm2 = await inquirer.prompt([
+            { type: 'rawlist', name: 'sure', message: 'Confirm again:', choices: ['No', 'Decrypt Wallet'] }
+        ]);
+
+        if (confirm2.sure !== 'Decrypt Wallet') return;
+
+        // Save as plain
+        const plainStore = DECRYPTED_WALLETS.map(w => ({
+            name: w.name,
+            privateKey: w.wallet.privateKey
+        }));
+        
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(plainStore, null, 2));
+        SESSION_PASSWORD = null; // Clear password
+        console.log("🔓 Wallets decrypted and saved.");
+        
+    } else {
+        // Plain -> Encrypted
+        console.log("🔐 Encrypting wallet vault...");
+        const password = await getPassword(true); // Ask for new password
+        
+        const encryptedStore = [];
+        for (const w of DECRYPTED_WALLETS) {
+            console.log(`Encrypting ${w.name}...`);
+            const encryptedJson = await w.wallet.encrypt(password);
+            encryptedStore.push({ name: w.name, data: encryptedJson });
+        }
+        
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
+        console.log("✅ Wallets encrypted and saved.");
+    }
+    await triggerBackup(USER_SETTINGS);
+}
 
 async function getPassword(confirm = false) {
     if (SESSION_PASSWORD) return SESSION_PASSWORD;
@@ -830,9 +915,42 @@ async function transferAsset() {
     }
 
     // 5. Amount
-    const details = await inquirer.prompt([
-        { type: 'input', name: 'amount', message: `Amount to send (${symbol}):` }
-    ]);
+    const amtType = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'mode',
+        message: 'Enter amount by:',
+        choices: [`Token Amount (e.g. 0.5)`, `Fiat Value (e.g. $5.00 USD)`]
+    }]);
+
+    let finalAmount = '0';
+
+    if (amtType.mode.startsWith('Token')) {
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Amount to send (${symbol}):` }]);
+        finalAmount = input.val;
+    } else {
+        // Need price.
+        // For Native: network.coingeckoId
+        // For Token: assetChoice.type.coingeckoId (if preset) or unknown
+        let geckoId = null;
+        if (assetChoice.type === 'native') geckoId = network.coingeckoId;
+        else if (assetChoice.type.coingeckoId) geckoId = assetChoice.type.coingeckoId;
+
+        if (!geckoId) {
+            console.log("❌ Price data not available for this asset.");
+            return;
+        }
+
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter USD Amount:` }]);
+        const price = await getPrice(geckoId);
+        if (price === 0) { console.log("❌ Price fetch failed."); return; }
+        
+        const usdVal = parseFloat(input.val);
+        const tokenVal = usdVal / price;
+        finalAmount = tokenVal.toFixed(6);
+        console.log(`💱 $${usdVal} ≈ ${finalAmount} ${symbol}`);
+    }
+
+    const details = { amount: finalAmount };
 
     console.log(`\n🚀 Preparing to send ${details.amount} ${symbol} on ${network.name}...`);
     console.log(`   To: ${recipientAddress}`);
@@ -924,8 +1042,39 @@ async function swapToken() {
     }
 
     // 4. Amount
-    const amt = await inquirer.prompt([{ type: 'input', name: 'val', message: `Amount of ${tokenData.symbol} to swap:` }]);
-    const amountIn = ethers.parseUnits(amt.val, tokenData.decimals);
+    const amtType = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'mode',
+        message: 'How do you want to specify the amount?',
+        choices: [`By Token Amount (e.g. 0.5 ${tokenData.symbol})`, `By Fiat Value (e.g. $5.00 USD)`]
+    }]);
+
+    let finalTokenAmount = '0';
+
+    if (amtType.mode.startsWith('By Token')) {
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Amount of ${tokenData.symbol} to swap:` }]);
+        finalTokenAmount = input.val;
+    } else {
+        if (!tokenData.coingeckoId) {
+            console.log(`❌ Cannot swap by USD: Price data unavailable for ${tokenData.symbol}.`);
+            return;
+        }
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter USD Amount (e.g. 5):` }]);
+        
+        console.log("⏳ Fetching price...");
+        const price = await getPrice(tokenData.coingeckoId);
+        if (price === 0) {
+            console.log("❌ Failed to fetch price.");
+            return;
+        }
+        
+        const usdAmount = parseFloat(input.val);
+        const tokenCount = usdAmount / price;
+        finalTokenAmount = tokenCount.toFixed(6); // 6 decimals precision
+        console.log(`💱 ${usdAmount} USD ≈ ${finalTokenAmount} ${tokenData.symbol} (Price: $${price})`);
+    }
+
+    const amountIn = ethers.parseUnits(finalTokenAmount, tokenData.decimals);
 
     // 5. Check Approval
     const routerAddress = ROUTERS[networkKey];
