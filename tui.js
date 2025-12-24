@@ -11,8 +11,7 @@ import {
     getPrice,
     USER_SETTINGS,
     PREDEFINED_TOKENS,
-    ERC20_ABI,
-    NETWORKS
+    ERC20_ABI
 } from './core.js';
 import { ethers } from 'ethers';
 
@@ -89,27 +88,49 @@ async function refreshBalances() {
     log(`Fetching balances for ${wallet.name} on ${currentNetwork}...`);
     
     // Native
+    const tableData = [];
     try {
         const bal = await getNativeBalance(wallet.wallet.address, currentNetwork);
         const symbol = NETWORKS[currentNetwork].currency;
         
-        // Update Table
-        balanceTable.setData({
-            headers: ['Asset', 'Balance', 'Value'],
-            data: [
-                [symbol, parseFloat(bal).toFixed(4), 'Loading...'] 
-            ]
-        });
-        
-        // Fetch price in background
         const price = await getPrice(NETWORKS[currentNetwork].coingeckoId);
         const val = (parseFloat(bal) * price).toFixed(2);
         
+        tableData.push([symbol, parseFloat(bal).toFixed(4), val]);
+        
+        // Tokens
+        const tokensToCheck = [];
+        if (PREDEFINED_TOKENS[currentNetwork]) tokensToCheck.push(...PREDEFINED_TOKENS[currentNetwork]);
+        if (USER_SETTINGS.savedTokens) {
+            tokensToCheck.push(...USER_SETTINGS.savedTokens.filter(t => t.network === currentNetwork));
+        }
+
+        const provider = new ethers.JsonRpcProvider(NETWORKS[currentNetwork].rpc);
+
+        for (const token of tokensToCheck) {
+            try {
+                const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
+                const balWei = await contract.balanceOf(wallet.wallet.address);
+                const decimals = token.decimals || await contract.decimals();
+                const symbol = token.symbol || await contract.symbol();
+                const balFloat = parseFloat(ethers.formatUnits(balWei, decimals));
+
+                if (balFloat > 0) {
+                    let valStr = "0.00";
+                    if (token.coingeckoId) {
+                        const tPrice = await getPrice(token.coingeckoId);
+                        valStr = (balFloat * tPrice).toFixed(2);
+                    }
+                    tableData.push([symbol, balFloat.toFixed(4), valStr]);
+                }
+            } catch (e) {
+                // Ignore error for specific token
+            }
+        }
+
         balanceTable.setData({
             headers: ['Asset', 'Balance', `Value (${USER_SETTINGS.currency})`],
-            data: [
-                [symbol, parseFloat(bal).toFixed(4), val] 
-            ]
+            data: tableData
         });
         screen.render();
         log(`Balance updated.`);

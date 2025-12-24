@@ -12,8 +12,118 @@ const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
 if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
 
 const WALLETS_FILE = path.join(CONFIG_DIR, 'my_wallets.json');
+const TRASH_FILE = path.join(CONFIG_DIR, 'trash_wallets.json');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
 const RPC_URL = "https://eth.llamarpc.com";
+
+// ... (existing code)
+
+async function deleteWallet() {
+    if (DECRYPTED_WALLETS.length === 0) return;
+
+    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }));
+    wChoices.push({ name: '🔙 Back', value: 'BACK' });
+
+    const choice = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'addr',
+            message: 'Select Wallet to DELETE (Move to Trash):',
+            choices: wChoices
+        }
+    ]);
+
+    if (choice.addr === 'BACK') return;
+
+    const confirm = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'sure',
+            message: 'Are you sure? It will be removed from active list.',
+            choices: ['Yes', 'No']
+        }
+    ]);
+
+    if (confirm.sure === 'No') return;
+
+    // Load Raw
+    const rawWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
+    const walletIndex = rawWallets.findIndex(w => {
+        // Need to match by checking if decrypt works? No, assuming order or re-encrypt.
+        // We don't have ID. But we have address in memory.
+        // We can't match encrypted data easily without decrypting all raw again or relying on index if distinct.
+        // Better: We stored name in raw. Match by name? Names can be duplicates? 
+        // Let's rely on name for now or better, decrypt to check address.
+        return w.name === DECRYPTED_WALLETS.find(dw => dw.wallet.address === choice.addr).name;
+    });
+
+    if (walletIndex === -1) {
+        console.log("❌ Error finding wallet in storage.");
+        return;
+    }
+
+    const deletedWallet = rawWallets.splice(walletIndex, 1)[0];
+    fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+
+    // Add to Trash
+    let trash = [];
+    if (fs.existsSync(TRASH_FILE)) {
+        trash = JSON.parse(fs.readFileSync(TRASH_FILE, 'utf8'));
+    }
+    trash.push(deletedWallet);
+    fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
+
+    // Update Memory
+    DECRYPTED_WALLETS = DECRYPTED_WALLETS.filter(w => w.wallet.address !== choice.addr);
+    
+    console.log("🗑️ Wallet moved to Trash. You can restore it from Settings.");
+    await triggerBackup(USER_SETTINGS);
+}
+
+async function restoreWallet() {
+    if (!fs.existsSync(TRASH_FILE)) {
+        console.log("No deleted wallets found.");
+        return;
+    }
+    const trash = JSON.parse(fs.readFileSync(TRASH_FILE, 'utf8'));
+    if (trash.length === 0) {
+        console.log("Trash is empty.");
+        return;
+    }
+
+    const choices = trash.map((w, i) => ({ name: w.name, value: i }));
+    choices.push({ name: '🔙 Back', value: 'BACK' });
+
+    const choice = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'idx',
+            message: 'Select Wallet to Restore:',
+            choices: choices
+        }
+    ]);
+
+    if (choice.idx === 'BACK') return;
+
+    const restored = trash.splice(choice.idx, 1)[0];
+    fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
+
+    const rawWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
+    rawWallets.push(restored);
+    fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+
+    // Unlock it into memory
+    const password = await getPassword();
+    try {
+        const wallet = await ethers.Wallet.fromEncryptedJson(restored.data, password);
+        DECRYPTED_WALLETS.push({ name: restored.name, wallet: wallet });
+        console.log(`✅ Restored ${restored.name}!`);
+    } catch(e) {
+        console.log("⚠️  Restored file, but failed to unlock in current session (Password mismatch?). Restart app to retry.");
+    }
+    await triggerBackup(USER_SETTINGS);
+}
+
 
 let DECRYPTED_WALLETS = []; 
 let SESSION_PASSWORD = null;
@@ -149,12 +259,18 @@ async function changeSettings() {
                 'Gas Limit Buffer (Advanced)',
                 'Manage Custom Tokens',
                 'Backup Configuration',
+                'Restore Deleted Wallet',
                 'Back'
             ]
         }
     ]);
 
     if (action.setting === 'Back') return;
+    
+    if (action.setting === 'Restore Deleted Wallet') {
+        await restoreWallet();
+        return;
+    }
     
     if (action.setting === 'Backup Configuration') {
         const type = await inquirer.prompt([
@@ -671,26 +787,61 @@ async function transferAsset() {
         }
     }
 
-    // 4. Recipient & Amount
+    // 4. Recipient
+    let recipientAddress = null;
+    
+    // Check if we have other wallets to send to
+    const otherWallets = DECRYPTED_WALLETS.filter(w => w.wallet.address !== senderWalletData.wallet.address);
+    
+    let destType = 'manual';
+    if (otherWallets.length > 0) {
+        const destChoice = await inquirer.prompt([
+            {
+                type: 'rawlist',
+                name: 'dest',
+                message: 'Send to:',
+                choices: ['Manual Address Entry', 'My Other Wallets']
+            }
+        ]);
+        destType = destChoice.dest;
+    }
+
+    if (destType === 'My Other Wallets') {
+        const targetChoice = await inquirer.prompt([
+            {
+                type: 'rawlist',
+                name: 'wallet',
+                message: 'Select Recipient Wallet:',
+                choices: otherWallets.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }))
+            }
+        ]);
+        recipientAddress = targetChoice.wallet;
+    } else {
+        const manualInput = await inquirer.prompt([
+            { type: 'input', name: 'to', message: 'Recipient Address:' }
+        ]);
+        recipientAddress = manualInput.to;
+    }
+
+    // 5. Amount
     const details = await inquirer.prompt([
-        { type: 'input', name: 'to', message: 'Recipient Address:' },
         { type: 'input', name: 'amount', message: `Amount to send (${symbol}):` }
     ]);
 
-    console.log(`
-🚀 Preparing to send ${details.amount} ${symbol} on ${network.name}...`);
+    console.log(`\n🚀 Preparing to send ${details.amount} ${symbol} on ${network.name}...`);
+    console.log(`   To: ${recipientAddress}`);
     
     try {
         let txResponse;
         if (tokenAddress) {
             const contract = new ethers.Contract(tokenAddress, ERC20_ABI, connectedSigner);
             const amountWei = ethers.parseUnits(details.amount, decimals);
-            txResponse = await contract.transfer(details.to, amountWei);
+            txResponse = await contract.transfer(recipientAddress, amountWei);
         } else {
             // Native Transfer
             const amountWei = ethers.parseEther(details.amount);
             const txRequest = {
-                to: details.to,
+                to: recipientAddress,
                 value: amountWei
             };
             
@@ -1065,6 +1216,7 @@ async function main() {
           'Import Wallet',
           'List Wallets',
           'Rename Wallet',
+          'Delete Wallet',
           'Check Balance',
           'Transfer Assets (Tokens/Native)',
           'Swap Token -> Native',
@@ -1089,6 +1241,9 @@ async function main() {
         break;
       case 'Rename Wallet':
         await renameWallet();
+        break;
+      case 'Delete Wallet':
+        await deleteWallet();
         break;
       case 'Check Balance':
         await checkBalance();
