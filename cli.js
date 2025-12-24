@@ -233,24 +233,90 @@ async function manageTokens() {
     if (action.do === 'Add New Token') {
         // 1. Select Network
         const network = await selectNetwork();
+        const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
         
-        // 2. Paste Address
-        const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Token Contract Address:' }]);
-        const address = input.addr.trim();
+        // 2. Choose Method
+        const method = await inquirer.prompt([
+            { type: 'rawlist', name: 'mode', message: 'How to find token?', choices: ['Search by Name (CoinGecko)', 'Enter Contract Address'] }
+        ]);
 
-        // 3. Fetch Details
+        let address = null;
+        let coingeckoId = null;
+
+        if (method.mode.startsWith('Enter')) {
+            const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Token Contract Address:' }]);
+            address = input.addr.trim();
+        } else {
+            // Search Logic
+            const query = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Enter Token Name (e.g. Pepe):' }]);
+            console.log("🔍 Searching CoinGecko...");
+            
+            try {
+                const res = await fetch(`https://api.coingecko.com/api/v3/search?query=${query.q}`);
+                const data = await res.json();
+                
+                if (!data.coins || data.coins.length === 0) {
+                    console.log("❌ No coins found.");
+                    return;
+                }
+
+                const choices = data.coins.slice(0, 10).map(c => ({
+                    name: `${c.name} (${c.symbol}) - Rank #${c.market_cap_rank || 'N/A'}`,
+                    value: c.id
+                }));
+
+                const coinChoice = await inquirer.prompt([
+                    { type: 'rawlist', name: 'id', message: 'Select Coin:', choices: choices }
+                ]);
+
+                console.log("⏳ Fetching contract details...");
+                const detailRes = await fetch(`https://api.coingecko.com/api/v3/coins/${coinChoice.id}`);
+                const detail = await detailRes.json();
+
+                // Map our network keys to CoinGecko platform keys
+                const platformMap = {
+                    'ethereum': 'ethereum',
+                    'bsc': 'binance-smart-chain',
+                    'polygon': 'polygon-pos',
+                    'celo': 'celo'
+                };
+
+                const platformKey = platformMap[networkKey];
+                address = detail.platforms[platformKey];
+                coingeckoId = detail.id;
+
+                if (!address) {
+                    console.log(`❌ This token does not have a contract on ${NETWORKS[networkKey].name}.`);
+                    console.log(`   Available on: ${Object.keys(detail.platforms).join(', ')}`);
+                    return;
+                }
+                console.log(`✅ Found Address: ${address}`);
+
+            } catch (e) {
+                console.log(`❌ Search failed: ${e.message}`);
+                return;
+            }
+        }
+
+        // 3. Fetch Details & Save
         try {
-            console.log("⏳ Fetching token details...");
+            console.log("⏳ Verifying on-chain...");
             const provider = new ethers.JsonRpcProvider(network.rpc);
             const contract = new ethers.Contract(address, ERC20_ABI, provider);
             const symbol = await contract.symbol();
             const decimals = await contract.decimals();
 
-            console.log(`✅ Found ${symbol} (Decimals: ${decimals})`);
+            console.log(`✅ Verified ${symbol} (Decimals: ${decimals})`);
             
             const confirm = await inquirer.prompt([{ type: 'confirm', name: 'save', message: 'Save this token?', default: true }]);
             if (confirm.save) {
-                USER_SETTINGS.savedTokens.push({ symbol, address, network: Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc), decimals: Number(decimals) });
+                USER_SETTINGS.savedTokens.push({ 
+                    symbol, 
+                    address, 
+                    network: networkKey, 
+                    decimals: Number(decimals),
+                    coingeckoId: coingeckoId // Store ID for price data!
+                });
                 saveSettings();
                 console.log("💾 Token Saved!");
             }
@@ -919,7 +985,7 @@ async function transferAsset() {
         type: 'rawlist',
         name: 'mode',
         message: 'Enter amount by:',
-        choices: [`Token Amount (e.g. 0.5)`, `Fiat Value (e.g. $5.00 USD)`]
+        choices: [`Token Amount (e.g. 0.5)`, `Fiat Value (e.g. 5.00 ${USER_SETTINGS.currency})`]
     }]);
 
     let finalAmount = '0';
@@ -940,14 +1006,14 @@ async function transferAsset() {
             return;
         }
 
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter USD Amount:` }]);
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter ${USER_SETTINGS.currency} Amount:` }]);
         const price = await getPrice(geckoId);
         if (price === 0) { console.log("❌ Price fetch failed."); return; }
         
         const usdVal = parseFloat(input.val);
         const tokenVal = usdVal / price;
         finalAmount = tokenVal.toFixed(6);
-        console.log(`💱 $${usdVal} ≈ ${finalAmount} ${symbol}`);
+        console.log(`💱 ${usdVal} ${USER_SETTINGS.currency} ≈ ${finalAmount} ${symbol}`);
     }
 
     const details = { amount: finalAmount };
@@ -1046,7 +1112,7 @@ async function swapToken() {
         type: 'rawlist',
         name: 'mode',
         message: 'How do you want to specify the amount?',
-        choices: [`By Token Amount (e.g. 0.5 ${tokenData.symbol})`, `By Fiat Value (e.g. $5.00 USD)`]
+        choices: [`By Token Amount (e.g. 0.5 ${tokenData.symbol})`, `By Fiat Value (e.g. 5.00 ${USER_SETTINGS.currency})`]
     }]);
 
     let finalTokenAmount = '0';
@@ -1056,10 +1122,10 @@ async function swapToken() {
         finalTokenAmount = input.val;
     } else {
         if (!tokenData.coingeckoId) {
-            console.log(`❌ Cannot swap by USD: Price data unavailable for ${tokenData.symbol}.`);
+            console.log(`❌ Cannot swap by Fiat: Price data unavailable for ${tokenData.symbol}.`);
             return;
         }
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter USD Amount (e.g. 5):` }]);
+        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter ${USER_SETTINGS.currency} Amount (e.g. 5):` }]);
         
         console.log("⏳ Fetching price...");
         const price = await getPrice(tokenData.coingeckoId);
@@ -1071,7 +1137,7 @@ async function swapToken() {
         const usdAmount = parseFloat(input.val);
         const tokenCount = usdAmount / price;
         finalTokenAmount = tokenCount.toFixed(6); // 6 decimals precision
-        console.log(`💱 ${usdAmount} USD ≈ ${finalTokenAmount} ${tokenData.symbol} (Price: $${price})`);
+        console.log(`💱 ${usdAmount} ${USER_SETTINGS.currency} ≈ ${finalTokenAmount} ${tokenData.symbol} (Price: ${price} ${USER_SETTINGS.currency})`);
     }
 
     const amountIn = ethers.parseUnits(finalTokenAmount, tokenData.decimals);
@@ -1091,10 +1157,19 @@ async function swapToken() {
         if (approvePrompt.ok === 'No') return;
 
         console.log("🚀 Approving (max)...");
-        const txApprove = await tokenContract.approve(routerAddress, ethers.MaxUint256);
-        console.log(`✅ Approved! Hash: ${txApprove.hash}`);
-        console.log("⏳ Waiting for confirmation...");
-        await txApprove.wait();
+        try {
+            const txApprove = await tokenContract.approve(routerAddress, ethers.MaxUint256);
+            console.log(`✅ Approved! Hash: ${txApprove.hash}`);
+            console.log("⏳ Waiting for confirmation...");
+            await txApprove.wait();
+        } catch (e) {
+            if (e.code === 'INSUFFICIENT_FUNDS') {
+                console.log(`❌ Insufficient Native Currency (BNB/ETH) to pay for gas. You cannot trade without it.`);
+            } else {
+                console.log(`❌ Approval Failed: ${e.message}`);
+            }
+            return;
+        }
     }
 
     // 6. Execute Swap
@@ -1135,7 +1210,11 @@ async function swapToken() {
         );
         console.log(`✅ Swap Sent! Hash: ${txSwap.hash}`);
     } catch (e) {
-        console.log(`❌ Swap Failed: ${e.message}`);
+        if (e.code === 'INSUFFICIENT_FUNDS') {
+            console.log(`❌ Insufficient Native Currency to pay for gas.`);
+        } else {
+            console.log(`❌ Swap Failed: ${e.message}`);
+        }
     }
 }
 
