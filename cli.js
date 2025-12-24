@@ -5,9 +5,15 @@ import { ethers } from 'ethers';
 import { SignClient } from "@walletconnect/sign-client";
 import os from 'os';
 import path from 'path';
+import 'dotenv/config'; // Load .env
 import { setupDrive, setupRclone, triggerBackup } from './drive.js';
 
-const PROJECT_ID = "524436d5d820c6fc4e8076acc513bd3c";
+const PROJECT_ID = process.env.PROJECT_ID;
+if (!PROJECT_ID) {
+    console.error("❌ Error: PROJECT_ID is missing from .env file.");
+    process.exit(1);
+}
+
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
 if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
 
@@ -929,7 +935,7 @@ async function swapToken() {
     const tokenContract = new ethers.Contract(tokenData.address, ERC20_ABI, connectedSigner);
     
     console.log("⏳ Checking allowance...");
-    const allowance = await tokenContract.allowance(selectedWalletData.address, routerAddress);
+    const allowance = await tokenContract.allowance(signer.address, routerAddress);
     
     if (allowance < amountIn) {
         const approvePrompt = await inquirer.prompt([{ type: 'rawlist', name: 'ok', message: `Router needs approval to spend your ${tokenData.symbol}. Approve?`, choices: ['Yes', 'No'] }]);
