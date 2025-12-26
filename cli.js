@@ -13,7 +13,7 @@ const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
 const ENV_FILE = path.join(CONFIG_DIR, '.env');
 
 // Load .env manually if not loaded by dotenv (which looks in cwd)
-if (!PROJECT_ID && fs.existsSync(ENV_FILE)) {
+if (fs.existsSync(ENV_FILE)) {
     const envConfig = fs.readFileSync(ENV_FILE, 'utf8');
     const match = envConfig.match(/PROJECT_ID=(.*)/);
     if (match) PROJECT_ID = match[1].trim();
@@ -29,23 +29,48 @@ async function checkProjectId() {
         message: 'Enter your Project ID (from cloud.walletconnect.com):'
     }]);
     
-    PROJECT_ID = answer.id;
+    PROJECT_ID = answer.id.trim();
     fs.writeFileSync(ENV_FILE, `PROJECT_ID=${PROJECT_ID}\n`);
     console.log(`✅ Project ID saved to ${ENV_FILE}`);
 }
 
-// const CONFIG_DIR ... defined above, need to reorganize to keep imports clean
-// I'll assume the previous code structure logic flows down.
-// Wait, top-level await is fine. I'll invoke checkProjectId() in main().
-
-// Remove the immediate check/exit block
-// if (!PROJECT_ID) ...
+// Ensure Config Dir Exists
 if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
 
 const WALLETS_FILE = path.join(CONFIG_DIR, 'my_wallets.json');
 const TRASH_FILE = path.join(CONFIG_DIR, 'trash_wallets.json');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
 const RPC_URL = "https://eth.llamarpc.com";
+
+// ... (Rest of imports and state) ...
+
+// Helper to ensure wallets are unlocked before actions
+async function ensureWalletsUnlocked() {
+    if (DECRYPTED_WALLETS.length > 0) return; // Already unlocked
+    await initializeWallets();
+}
+
+// ... (Existing functions: deleteWallet, restoreWallet, etc.) ...
+
+// --- WalletConnect Logic ---
+
+async function connectWallet(predefinedUri = null) {
+  await ensureWalletsUnlocked(); // Ensure unlocked
+  await checkProjectId(); // Ensure Project ID exists
+
+  // console.log(`DEBUG: Using Project ID: ${PROJECT_ID}`); 
+
+  const wallets = await listWallets();
+  if (wallets.length === 0) return;
+
+  // ... (rest of connectWallet logic) ...
+  
+  // Use global PROJECT_ID
+  const client = await SignClient.init({
+    projectId: PROJECT_ID,
+    // ...
+
+
 
 // ... (existing code)
 
@@ -284,6 +309,8 @@ async function manageTokens() {
                 const platformKey = platformMap[networkKey];
                 address = detail.platforms[platformKey];
                 coingeckoId = detail.id;
+
+                console.log("DEBUG: Platforms in response:", Object.keys(detail.platforms));
 
                 if (!address) {
                     console.log(`❌ This token does not have a contract on ${NETWORKS[networkKey].name}.`);
@@ -1425,16 +1452,24 @@ async function connectWallet(predefinedUri = null) {
   });
 }
 
-// --- Main Menu ---
+async function ensureWalletsUnlocked() {
+    if (DECRYPTED_WALLETS.length > 0) return;
+    // Check if we even have wallets to unlock
+    if (!fs.existsSync(WALLETS_FILE)) return;
+    const raw = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
+    if (raw.length === 0) return;
+    
+    await initializeWallets();
+}
 
 async function main() {
   console.log("\n🚀 Multi-Wallet CLI Manager");
-  await initializeWallets();
   
   // Check for direct WC URI in args
   const wcArg = process.argv.find(arg => arg.startsWith('wc:'));
   if (wcArg) {
       console.log("🔗 Direct Connection Mode detected.");
+      await ensureWalletsUnlocked();
       await connectWallet(wcArg);
       process.exit(0);
   }
@@ -1462,41 +1497,54 @@ async function main() {
       }
     ]);
 
-    switch (answer.action) {
-      case 'Create New Wallet':
-        await createNewWallet();
-        break;
-      case 'Import Wallet':
-        await importWallet();
-        break;
-      case 'List Wallets':
-        const w = await listWallets();
-        console.table(w.map(w => ({ Name: w.name, Address: w.address })));
-        break;
-      case 'Rename Wallet':
-        await renameWallet();
-        break;
-      case 'Delete Wallet':
-        await deleteWallet();
-        break;
-      case 'Check Balance':
-        await checkBalance();
-        break;
-      case 'Transfer Assets (Tokens/Native)':
-        await transferAsset();
-        break;
-      case 'Swap Token -> Native':
-        await swapToken();
-        break;
-      case 'Connect to dApp (WalletConnect)':
-        await connectWallet();
-        break;
-      case 'Settings':
-        await changeSettings();
-        break;
-      case 'Exit':
-        console.log("Bye! 👋");
-        process.exit(0);
+    try {
+        switch (answer.action) {
+          case 'Create New Wallet':
+            await ensureWalletsUnlocked();
+            await createNewWallet();
+            break;
+          case 'Import Wallet':
+            await ensureWalletsUnlocked();
+            await importWallet();
+            break;
+          case 'List Wallets':
+            await ensureWalletsUnlocked();
+            const w = await listWallets();
+            console.table(w.map(w => ({ Name: w.name, Address: w.address })));
+            break;
+          case 'Rename Wallet':
+            await ensureWalletsUnlocked();
+            await renameWallet();
+            break;
+          case 'Delete Wallet':
+            await ensureWalletsUnlocked();
+            await deleteWallet();
+            break;
+          case 'Check Balance':
+            await ensureWalletsUnlocked();
+            await checkBalance();
+            break;
+          case 'Transfer Assets (Tokens/Native)':
+            await ensureWalletsUnlocked();
+            await transferAsset();
+            break;
+          case 'Swap Token -> Native':
+            await ensureWalletsUnlocked();
+            await swapToken();
+            break;
+          case 'Connect to dApp (WalletConnect)':
+            await ensureWalletsUnlocked();
+            await connectWallet();
+            break;
+          case 'Settings':
+            await changeSettings();
+            break;
+          case 'Exit':
+            console.log("Bye! 👋");
+            process.exit(0);
+        }
+    } catch (e) {
+        console.error("❌ Error:", e.message);
     }
     console.log(""); 
   }
