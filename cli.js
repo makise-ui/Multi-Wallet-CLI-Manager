@@ -287,20 +287,28 @@ async function showPrivateKey() {
 
     if (confirm.sure !== 'Yes, Reveal') return;
 
-    console.clear();
+    // Print headers
     console.log("\n\n");
     console.log("==========================================");
     console.log(`🔑 Private Key for ${target.name} (${target.wallet.address}):`);
-    console.log("\n");
-    console.log(`   ${target.wallet.privateKey}`);
-    console.log("\n");
-    console.log("==========================================");
-    console.log("\n⏳ Hiding in 5 seconds...");
+    
+    // Print Key (Track lines)
+    const keyLine = `   ${target.wallet.privateKey}`;
+    process.stdout.write("\n" + keyLine + "\n");
+    
+    console.log("\n==========================================");
+    process.stdout.write("\n⏳ Hiding in 5 seconds...");
 
     await new Promise(resolve => setTimeout(resolve, 5000));
     
-    console.clear();
-    console.log("🔒 Private Key Hidden.");
+    // Move cursor up to clear
+    // We printed: \n \n ==== \n 🔑 \n key \n ==== \n ⏳
+    // Roughly 8 lines.
+    const linesToClear = 8;
+    process.stdout.moveCursor(0, -linesToClear);
+    process.stdout.clearScreenDown();
+    
+    console.log("🔒 Private Key Hidden.                         ");
 }
 
 async function deleteWallet() {
