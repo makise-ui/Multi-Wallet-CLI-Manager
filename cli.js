@@ -256,6 +256,53 @@ async function connectWallet(predefinedUri = null) {
   });
 }
 
+async function showPrivateKey() {
+    if (DECRYPTED_WALLETS.length === 0) return;
+
+    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }));
+    wChoices.push({ name: '🔙 Back', value: 'BACK' });
+
+    const choice = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'addr',
+            message: 'Select Wallet to REVEAL Private Key:',
+            choices: wChoices
+        }
+    ]);
+
+    if (choice.addr === 'BACK') return;
+
+    const target = DECRYPTED_WALLETS.find(w => w.wallet.address === choice.addr);
+    
+    // Double confirmation
+    const confirm = await inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'sure',
+            message: '⚠️  This will display your PRIVATE KEY. Anyone watching can steal your funds. Continue?',
+            choices: ['No', 'Yes, Reveal']
+        }
+    ]);
+
+    if (confirm.sure !== 'Yes, Reveal') return;
+
+    console.clear();
+    console.log("\n\n");
+    console.log("==========================================");
+    console.log(`🔑 Private Key for ${target.name} (${target.wallet.address}):`);
+    console.log("\n");
+    console.log(`   ${target.wallet.privateKey}`);
+    console.log("\n");
+    console.log("==========================================");
+    console.log("\n⏳ Hiding in 5 seconds...");
+
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    console.clear();
+    console.log("🔒 Private Key Hidden.");
+}
+
 async function deleteWallet() {
     if (DECRYPTED_WALLETS.length === 0) return;
 
@@ -1510,6 +1557,7 @@ async function main() {
           'Import Wallet',
           'List Wallets',
           'Rename Wallet',
+          'Show Private Key',
           'Delete Wallet',
           'Check Balance',
           'Transfer Assets (Tokens/Native)',
@@ -1540,6 +1588,10 @@ async function main() {
           case 'Rename Wallet':
             await ensureWalletsUnlocked();
             await renameWallet();
+            break;
+          case 'Show Private Key':
+            await ensureWalletsUnlocked();
+            await showPrivateKey();
             break;
           case 'Delete Wallet':
             await ensureWalletsUnlocked();
