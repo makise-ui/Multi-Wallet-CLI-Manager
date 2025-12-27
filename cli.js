@@ -55,24 +55,206 @@ async function ensureWalletsUnlocked() {
 // --- WalletConnect Logic ---
 
 async function connectWallet(predefinedUri = null) {
-  await ensureWalletsUnlocked(); // Ensure unlocked
-  await checkProjectId(); // Ensure Project ID exists
-
-  // console.log(`DEBUG: Using Project ID: ${PROJECT_ID}`); 
+  await ensureWalletsUnlocked(); 
+  await checkProjectId(); 
 
   const wallets = await listWallets();
   if (wallets.length === 0) return;
 
-  // ... (rest of connectWallet logic) ...
+  const wChoices = wallets.map(w => ({ name: `${w.name} (${w.address})`, value: w.address }));
+  wChoices.push({ name: '🔙 Back', value: 'BACK' });
+
+  const walletChoice = await inquirer.prompt([
+    {
+      type: 'rawlist',
+      name: 'walletAddress',
+      message: 'Select wallet to connect:',
+      choices: wChoices
+    }
+  ]);
+
+  if (walletChoice.walletAddress === 'BACK') return;
+
+  const selectedWalletData = DECRYPTED_WALLETS.find(w => w.wallet.address === walletChoice.walletAddress);
+  const signer = selectedWalletData.wallet;
+
+  let uri = predefinedUri;
+  if (!uri) {
+      const uriAnswer = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'uri',
+          message: 'Paste the WalletConnect URI (wc:...):',
+          validate: (input) => input.startsWith('wc:') || 'Invalid URI, must start with wc:'
+        }
+      ]);
+      uri = uriAnswer.uri;
+  }
+
+  console.log(`\n🔌 Initializing WalletConnect with ${selectedWalletData.name}...\n`);
   
-  // Use global PROJECT_ID
+  const SilentLogger = {
+      fatal: () => {},
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      debug: () => {},
+      trace: () => {},
+      child: () => SilentLogger 
+  };
+
+  const isVerbose = process.argv.includes('-v');
+  const wcLogger = isVerbose ? "error" : SilentLogger;
+  
   const client = await SignClient.init({
     projectId: PROJECT_ID,
-    // ...
+    logger: wcLogger,
+    metadata: {
+      name: "Headless CLI Wallet",
+      description: "My Local CLI Wallet",
+      url: "https://cli-wallet.com",
+      icons: ["https://avatars.githubusercontent.com/u/37784886"],
+    },
+  });
 
+  await new Promise(async (resolve) => {
+      client.on("session_proposal", async (proposal) => {
+        const { id, params } = proposal;
+        const dAppName = params.proposer.metadata.name;
+        console.log(`\n📥 Session Proposal from: ${dAppName}`);
+        console.log(`   Required Chains: ${JSON.stringify(params.requiredNamespaces)}`);
 
+        const confirm = await inquirer.prompt([
+          {
+            type: 'rawlist',
+            name: 'approve',
+            message: `Do you want to connect ${selectedWalletData.name} to ${dAppName}?`,
+            choices: ['Yes', 'No']
+          }
+        ]);
 
-// ... (existing code)
+        if (confirm.approve === 'No') {
+            console.log("❌ Connection rejected.");
+            resolve();
+            return;
+        }
+
+        const namespaces = {};
+        const required = params.requiredNamespaces || {};
+        const optional = params.optionalNamespaces || {};
+        const allNamespaces = { ...required, ...optional };
+
+        Object.keys(allNamespaces).forEach((key) => {
+          const chains = allNamespaces[key].chains || ["eip155:1"];
+          const accounts = chains.map((chain) => `${chain}:${signer.address}`);
+          namespaces[key] = {
+            accounts,
+            methods: allNamespaces[key].methods || [],
+            events: allNamespaces[key].events || [],
+          };
+        });
+
+        const { topic, acknowledged } = await client.approve({
+          id,
+          namespaces,
+        });
+
+        console.log(`✅ Connected! Session Topic: ${topic}`);
+        await acknowledged();
+        console.log("🔗 Session Acknowledged. Waiting for requests... (Press Ctrl+C to force quit if stuck)");
+      });
+
+      client.on("session_request", async (event) => {
+        const { topic, params, id } = event;
+        const { request } = params;
+        console.log(`\n📩 New Request: ${request.method}`);
+
+        const confirmSign = await inquirer.prompt([
+            {
+              type: 'rawlist',
+              name: 'sign',
+              message: `Approve ${request.method} request?`,
+              choices: ['Yes', 'No']
+            }
+          ]);
+
+        if (confirmSign.sign === 'No') {
+            console.log("❌ Request rejected locally.");
+            return;
+        }
+
+        try {
+            let result;
+            if (request.method === "personal_sign") {
+                const message = request.params[0];
+                const data = ethers.isHexString(message) ? ethers.getBytes(message) : message;
+                const readable = ethers.isHexString(message) ? ethers.toUtf8String(message) : message;
+                console.log(`📝 Signing: "${readable}"`);
+                result = await signer.signMessage(data);
+            } else if (request.method.startsWith("eth_signTypedData")) {
+                 const [_, data] = request.params;
+                 const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+                 result = await signer.signTypedData(parsedData.domain, parsedData.types, parsedData.message);
+            } else if (request.method === "eth_sendTransaction") {
+                const provider = new ethers.JsonRpcProvider(RPC_URL);
+                const connectedWallet = signer.connect(provider);
+                
+                const txParams = request.params[0];
+                console.log("💸 Processing Transaction:", txParams);
+                
+                const tx = {
+                    to: txParams.to,
+                    value: txParams.value,
+                    data: txParams.data,
+                    gasLimit: txParams.gas,
+                };
+
+                const confirmTx = await inquirer.prompt([
+                    {
+                        type: 'rawlist',
+                        name: 'send',
+                        message: `Send transaction to ${tx.to} with value ${tx.value}?`,
+                        choices: ['Yes', 'No']
+                    }
+                ]);
+
+                if (confirmTx.send === 'No') {
+                    console.log("❌ Transaction cancelled.");
+                    return; 
+                }
+
+                console.log("🚀 Sending transaction...");
+                const txResponse = await connectedWallet.sendTransaction(tx);
+                console.log(`✅ Sent! Hash: ${txResponse.hash}`);
+                result = txResponse.hash;
+            }
+
+            if (result) {
+                await client.respond({
+                    topic,
+                    response: { id, jsonrpc: "2.0", result },
+                });
+                console.log("📤 Signed & Sent!");
+            }
+        } catch (error) {
+            console.error("❌ Error signing:", error.message);
+        }
+      });
+
+      client.on("session_delete", () => {
+          console.log("🔌 Disconnected by dApp.");
+          resolve(); 
+      });
+
+      try {
+          await client.pair({ uri: uri });
+          console.log("⏳ Pairing request sent. Check the dApp...");
+      } catch (e) {
+          console.error("❌ Pairing Error:", e.message);
+          resolve(); 
+      }
+  });
+}
 
 async function deleteWallet() {
     if (DECRYPTED_WALLETS.length === 0) return;
@@ -189,6 +371,7 @@ let USER_SETTINGS = {
     gasLimitBuffer: '0',
     backupMethod: null, // 'rclone' or 'gapi'
     rcloneRemote: null,
+    encryptionDisabled: false,
     savedTokens: [] // { symbol: "USDT", address: "0x...", network: "bsc", decimals: 18 }
 };
 
@@ -594,26 +777,56 @@ async function initializeWallets() {
     const rawWallets = loadWalletsRaw();
     if (rawWallets.length === 0) return;
 
-    // Check if migration is needed (if wallets have 'privateKey' property)
+    // Check if wallets are unencrypted (contain 'privateKey')
     if (rawWallets[0].privateKey) {
-        console.log("⚠️  Unencrypted wallets detected! Securing them now...");
-        const password = await getPassword(true);
-        
-        DECRYPTED_WALLETS = [];
-        const encryptedStore = [];
+        if (!USER_SETTINGS.encryptionDisabled) {
+            console.log("⚠️  Unencrypted wallets detected!");
+            const choice = await inquirer.prompt([{
+                type: 'rawlist',
+                name: 'action',
+                message: 'How would you like to proceed?',
+                choices: ['Encrypt wallets now (Recommended)', 'Keep unencrypted (RISKY)']
+            }]);
 
-        for (const w of rawWallets) {
-            console.log(`🔒 Encrypting ${w.name}...`);
-            const wallet = new ethers.Wallet(w.privateKey);
-            const encryptedJson = await wallet.encrypt(password);
-            
-            DECRYPTED_WALLETS.push({ name: w.name, wallet: wallet });
-            encryptedStore.push({ name: w.name, data: encryptedJson });
+            if (choice.action.startsWith('Encrypt')) {
+                const password = await getPassword(true);
+                
+                DECRYPTED_WALLETS = [];
+                const encryptedStore = [];
+
+                for (const w of rawWallets) {
+                    console.log(`🔒 Encrypting ${w.name}...`);
+                    const wallet = new ethers.Wallet(w.privateKey);
+                    const encryptedJson = await wallet.encrypt(password);
+                    
+                    DECRYPTED_WALLETS.push({ name: w.name, wallet: wallet });
+                    encryptedStore.push({ name: w.name, data: encryptedJson });
+                }
+                
+                fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
+                console.log("✅ All wallets encrypted and saved!");
+                await triggerBackup(USER_SETTINGS);
+            } else {
+                // Confirm risk
+                console.log("\n🛑 RISK WARNING: Your private keys are stored in PLAIN TEXT.");
+                console.log("   Anyone with access to your device can see them.");
+                
+                const confirm1 = await inquirer.prompt([{ type: 'confirm', name: 'ok', message: 'Are you sure you want to stay unencrypted?', default: false }]);
+                if (!confirm1.ok) return initializeWallets(); // Try again
+
+                const confirm2 = await inquirer.prompt([{ type: 'confirm', name: 'ok', message: 'LAST CHANCE: Stay unencrypted?', default: false }]);
+                if (!confirm2.ok) return initializeWallets();
+
+                USER_SETTINGS.encryptionDisabled = true;
+                saveSettings();
+                
+                DECRYPTED_WALLETS = rawWallets.map(w => ({ name: w.name, wallet: new ethers.Wallet(w.privateKey) }));
+                console.log("🔓 Unlocked unencrypted wallets.");
+            }
+        } else {
+            DECRYPTED_WALLETS = rawWallets.map(w => ({ name: w.name, wallet: new ethers.Wallet(w.privateKey) }));
+            // console.log("🔓 Unlocked unencrypted wallets.");
         }
-        
-        fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
-        console.log("✅ All wallets encrypted and saved!");
-        await triggerBackup(USER_SETTINGS);
     } else {
         // Decrypt existing
         console.log("🔐 Wallets are encrypted.");
@@ -642,49 +855,76 @@ async function initializeWallets() {
 }
 
 async function saveEncryptedWallet(name, wallet) {
-    const password = await getPassword();
-    console.log("⏳ Encrypting wallet...");
-    const encryptedJson = await wallet.encrypt(password);
-    
     const rawWallets = loadWalletsRaw();
-    rawWallets.push({ name: name, data: encryptedJson });
+    
+    if (USER_SETTINGS.encryptionDisabled) {
+        rawWallets.push({ name: name, privateKey: wallet.privateKey });
+    } else {
+        const password = await getPassword();
+        console.log("⏳ Encrypting wallet...");
+        const encryptedJson = await wallet.encrypt(password);
+        rawWallets.push({ name: name, data: encryptedJson });
+    }
     
     fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
     
     // Update memory
     DECRYPTED_WALLETS.push({ name: name, wallet: wallet });
-    console.log(`✅ Wallet '${name}' saved securely.`);
+    console.log(`✅ Wallet '${name}' saved.`);
     await triggerBackup(USER_SETTINGS);
 }
 
+async function ensureEncryptionPreference() {
+    if (DECRYPTED_WALLETS.length > 0 || fs.existsSync(WALLETS_FILE)) return;
+
+    console.log("\n🛡️  Vault Setup");
+    const choice = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'action',
+        message: 'Do you want to encrypt your wallet vault with a password?',
+        choices: ['Yes, encrypt (Recommended)', 'No, store in plain text (RISKY)']
+    }]);
+
+    if (choice.action.startsWith('Yes')) {
+        await getPassword(true);
+        USER_SETTINGS.encryptionDisabled = false;
+    } else {
+        console.log("\n🛑 RISK WARNING: Your private keys will be stored in PLAIN TEXT.");
+        const confirm1 = await inquirer.prompt([{ type: 'confirm', name: 'ok', message: 'Are you sure?', default: false }]);
+        const confirm2 = await inquirer.prompt([{ type: 'confirm', name: 'ok', message: 'REALLY SURE? This is unsafe.', default: false }]);
+        
+        if (confirm1.ok && confirm2.ok) {
+            USER_SETTINGS.encryptionDisabled = true;
+        } else {
+            return ensureEncryptionPreference(); // Back to start
+        }
+    }
+    saveSettings();
+}
+
 async function createNewWallet() {
+  await ensureEncryptionPreference();
   console.log("Creating new wallet locally on device...");
   const wallet = ethers.Wallet.createRandom();
   const nameAnswer = await inquirer.prompt([
     {
       type: 'input',
       name: 'name',
-      message: 'Give this wallet a name (e.g. "Main", "Burner":',
+      message: 'Give this wallet a name (e.g. "Main", "Burner"):',
       default: `Wallet ${DECRYPTED_WALLETS.length + 1}`
     }
   ]);
   
-  if (DECRYPTED_WALLETS.length === 0 && !fs.existsSync(WALLETS_FILE)) {
-      // First time setup, ask for password confirm
-      await getPassword(true); 
-  }
-
   await saveEncryptedWallet(nameAnswer.name, wallet);
   console.log(`🔑 Address: ${wallet.address}`);
 }
 
 async function importWallet() {
+    await ensureEncryptionPreference();
     console.log("Importing existing wallet...");
     
-    // Ensure we have a password set/active before importing
-    if (DECRYPTED_WALLETS.length === 0 && !fs.existsSync(WALLETS_FILE)) {
-        await getPassword(true);
-    } else {
+    // Ensure we have a password set/active before importing (if not disabled)
+    if (!USER_SETTINGS.encryptionDisabled) {
         await getPassword();
     }
 
@@ -1246,221 +1486,6 @@ async function swapToken() {
 }
 
 // --- WalletConnect Logic ---
-
-async function connectWallet(predefinedUri = null) {
-  const wallets = await listWallets();
-  if (wallets.length === 0) return;
-
-  const wChoices = wallets.map(w => ({ name: `${w.name} (${w.address})`, value: w.address }));
-  wChoices.push({ name: '🔙 Back', value: 'BACK' });
-
-  const walletChoice = await inquirer.prompt([
-    {
-      type: 'rawlist',
-      name: 'walletAddress',
-      message: 'Select wallet to connect:',
-      choices: wChoices
-    }
-  ]);
-
-  if (walletChoice.walletAddress === 'BACK') return;
-
-  const selectedWalletData = DECRYPTED_WALLETS.find(w => w.wallet.address === walletChoice.walletAddress);
-  const signer = selectedWalletData.wallet;
-
-  let uri = predefinedUri;
-  if (!uri) {
-      const uriAnswer = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'uri',
-          message: 'Paste the WalletConnect URI (wc:...):',
-          validate: (input) => input.startsWith('wc:') || 'Invalid URI, must start with wc:'
-        }
-      ]);
-      uri = uriAnswer.uri;
-  }
-
-  console.log(`\n🔌 Initializing WalletConnect with ${selectedWalletData.name}...\n`);
-  
-  const SilentLogger = {
-      fatal: () => {},
-      error: () => {},
-      warn: () => {},
-      info: () => {},
-      debug: () => {},
-      trace: () => {},
-      child: () => SilentLogger 
-  };
-
-  const isVerbose = process.argv.includes('-v');
-  const wcLogger = isVerbose ? "error" : SilentLogger;
-  
-  const client = await SignClient.init({
-    projectId: PROJECT_ID,
-    logger: wcLogger,
-    metadata: {
-      name: "Headless CLI Wallet",
-      description: "My Local CLI Wallet",
-      url: "https://cli-wallet.com",
-      icons: ["https://avatars.githubusercontent.com/u/37784886"],
-    },
-  });
-
-  // Wrap event listeners in a Promise to block main loop
-  await new Promise(async (resolve) => {
-      
-      client.on("session_proposal", async (proposal) => {
-        const { id, params } = proposal;
-        const dAppName = params.proposer.metadata.name;
-        console.log(`\n📥 Session Proposal from: ${dAppName}`);
-        console.log(`   Required Chains: ${JSON.stringify(params.requiredNamespaces)}`);
-
-        const confirm = await inquirer.prompt([
-          {
-            type: 'rawlist',
-            name: 'approve',
-            message: `Do you want to connect ${selectedWalletData.name} to ${dAppName}?`,
-            choices: ['Yes', 'No']
-          }
-        ]);
-
-        if (confirm.approve === 'No') {
-            console.log("❌ Connection rejected.");
-            // Don't resolve here, user might want to try another URI or wait? 
-            // Actually, usually connection rejection ends the flow.
-            // Let's resolve to go back to menu.
-            resolve();
-            return;
-        }
-
-        const namespaces = {};
-        const required = params.requiredNamespaces || {};
-        const optional = params.optionalNamespaces || {};
-        const allNamespaces = { ...required, ...optional };
-
-        Object.keys(allNamespaces).forEach((key) => {
-          const chains = allNamespaces[key].chains || ["eip155:1"];
-          const accounts = chains.map((chain) => `${chain}:${signer.address}`);
-          namespaces[key] = {
-            accounts,
-            methods: allNamespaces[key].methods || [],
-            events: allNamespaces[key].events || [],
-          };
-        });
-
-        const { topic, acknowledged } = await client.approve({
-          id,
-          namespaces,
-        });
-
-        console.log(`✅ Connected! Session Topic: ${topic}`);
-        await acknowledged();
-        console.log("🔗 Session Acknowledged. Waiting for requests... (Press Ctrl+C to force quit if stuck)");
-      });
-
-      client.on("session_request", async (event) => {
-        const { topic, params, id } = event;
-        const { request } = params;
-        
-        console.log(`\n📩 New Request: ${request.method}`);
-
-        const confirmSign = await inquirer.prompt([
-            {
-              type: 'rawlist',
-              name: 'sign',
-              message: `Approve ${request.method} request?`,
-              choices: ['Yes', 'No']
-            }
-          ]);
-
-        if (confirmSign.sign === 'No') {
-            console.log("❌ Request rejected locally.");
-            return;
-        }
-
-        try {
-            let result;
-            if (request.method === "personal_sign") {
-                const message = request.params[0];
-                const data = ethers.isHexString(message) ? ethers.getBytes(message) : message;
-                const readable = ethers.isHexString(message) ? ethers.toUtf8String(message) : message;
-                console.log(`📝 Signing: "${readable}"`);
-                result = await signer.signMessage(data);
-            } else if (request.method.startsWith("eth_signTypedData")) {
-                 const [_, data] = request.params;
-                 const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-                 result = await signer.signTypedData(parsedData.domain, parsedData.types, parsedData.message);
-            } else if (request.method === "eth_sendTransaction") {
-                const provider = new ethers.JsonRpcProvider(RPC_URL);
-                const connectedWallet = signer.connect(provider);
-                
-                const txParams = request.params[0];
-                console.log("💸 Processing Transaction:", txParams);
-                
-                const tx = {
-                    to: txParams.to,
-                    value: txParams.value,
-                    data: txParams.data,
-                    gasLimit: txParams.gas,
-                };
-
-                const confirmTx = await inquirer.prompt([
-                    {
-                        type: 'rawlist',
-                        name: 'send',
-                        message: `Send transaction to ${tx.to} with value ${tx.value}?`,
-                        choices: ['Yes', 'No']
-                    }
-                ]);
-
-                if (confirmTx.send === 'No') {
-                    console.log("❌ Transaction cancelled.");
-                    return; 
-                }
-
-                console.log("🚀 Sending transaction...");
-                const txResponse = await connectedWallet.sendTransaction(tx);
-                console.log(`✅ Sent! Hash: ${txResponse.hash}`);
-                result = txResponse.hash;
-            }
-
-            if (result) {
-                await client.respond({
-                    topic,
-                    response: { id, jsonrpc: "2.0", result },
-                });
-                console.log("📤 Signed & Sent!");
-            }
-        } catch (error) {
-            console.error("❌ Error signing:", error.message);
-        }
-      });
-
-      client.on("session_delete", () => {
-          console.log("🔌 Disconnected by dApp.");
-          resolve(); // Resolve promise to return to main menu
-      });
-
-      try {
-          await client.pair({ uri: uri });
-          console.log("⏳ Pairing request sent. Check the dApp...");
-      } catch (e) {
-          console.error("❌ Pairing Error:", e.message);
-          resolve(); // Error pairing, go back
-      }
-  });
-}
-
-async function ensureWalletsUnlocked() {
-    if (DECRYPTED_WALLETS.length > 0) return;
-    // Check if we even have wallets to unlock
-    if (!fs.existsSync(WALLETS_FILE)) return;
-    const raw = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
-    if (raw.length === 0) return;
-    
-    await initializeWallets();
-}
 
 async function main() {
   console.log("\n🚀 Multi-Wallet CLI Manager");
