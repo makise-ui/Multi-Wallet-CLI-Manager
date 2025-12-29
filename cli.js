@@ -1189,6 +1189,77 @@ async function checkBalance() {
   }
 }
 
+async function checkPortfolio() {
+    const wallets = await listWallets();
+    if (wallets.length === 0) return;
+
+    console.log(`\n📊 Generating Portfolio Overview (This may take a moment)...`);
+    
+    let grandTotal = 0;
+    const report = [];
+
+    // Fetch Prices Once
+    const prices = {};
+    for (const key of Object.keys(NETWORKS)) {
+        if (NETWORKS[key].coingeckoId) {
+            prices[key] = await getPrice(NETWORKS[key].coingeckoId);
+        }
+    }
+
+    // Iterate Wallets
+    for (const w of wallets) {
+        let walletTotal = 0;
+        process.stdout.write(`Scanning ${w.name}... `);
+        
+        // Scan Networks (Parallel)
+        const promises = Object.keys(NETWORKS).map(async (netKey) => {
+            try {
+                const provider = new ethers.JsonRpcProvider(NETWORKS[netKey].rpc);
+                const balWei = await provider.getBalance(w.address);
+                const bal = parseFloat(ethers.formatEther(balWei));
+                if (bal > 0) {
+                    const val = bal * (prices[netKey] || 0);
+                    walletTotal += val;
+                }
+                
+                // Scan Tokens
+                if (PREDEFINED_TOKENS[netKey]) {
+                    for (const t of PREDEFINED_TOKENS[netKey]) {
+                        try {
+                            const contract = new ethers.Contract(t.address, ERC20_ABI, provider);
+                            const tBalWei = await contract.balanceOf(w.address);
+                            if (tBalWei > 0n) {
+                                const tBal = parseFloat(ethers.formatUnits(tBalWei, t.decimals));
+                                if (t.coingeckoId) {
+                                    const tPrice = await getPrice(t.coingeckoId);
+                                    walletTotal += tBal * tPrice;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+            } catch (e) {
+                // Ignore network errors
+            }
+        });
+
+        await Promise.all(promises);
+        
+        grandTotal += walletTotal;
+        report.push({ name: w.name, address: w.address, value: walletTotal });
+        console.log(`Done. ($${walletTotal.toFixed(2)})`);
+    }
+
+    console.log("\n==========================================");
+    console.log(`💰 GRAND TOTAL: ${grandTotal.toFixed(2)} ${USER_SETTINGS.currency}`);
+    console.log("==========================================");
+    console.table(report.map(r => ({ 
+        Wallet: r.name, 
+        Address: `${r.address.substring(0,6)}...${r.address.substring(38)}`, 
+        Value: `${r.value.toFixed(2)} ${USER_SETTINGS.currency}` 
+    })));
+}
+
 async function transferAsset() {
     const wallets = await listWallets();
     if (wallets.length === 0) return;
@@ -1568,6 +1639,7 @@ async function main() {
           'Show Private Key',
           'Delete Wallet',
           'Check Balance',
+          'Portfolio Overview',
           'Transfer Assets (Tokens/Native)',
           'Swap Token -> Native',
           'Connect to dApp (WalletConnect)',
@@ -1597,10 +1669,6 @@ async function main() {
             await ensureWalletsUnlocked();
             await renameWallet();
             break;
-          case 'Show Private Key':
-            await ensureWalletsUnlocked();
-            await showPrivateKey();
-            break;
           case 'Delete Wallet':
             await ensureWalletsUnlocked();
             await deleteWallet();
@@ -1608,6 +1676,10 @@ async function main() {
           case 'Check Balance':
             await ensureWalletsUnlocked();
             await checkBalance();
+            break;
+          case 'Portfolio Overview':
+            await ensureWalletsUnlocked();
+            await checkPortfolio();
             break;
           case 'Transfer Assets (Tokens/Native)':
             await ensureWalletsUnlocked();
