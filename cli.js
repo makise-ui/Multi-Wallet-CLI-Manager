@@ -257,9 +257,12 @@ async function connectWallet(predefinedUri = null) {
 }
 
 async function showPrivateKey() {
-    if (DECRYPTED_WALLETS.length === 0) return;
+    if (DECRYPTED_WALLETS.length === 0) {
+        console.log("❌ No wallets unlocked.");
+        return;
+    }
 
-    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }));
+    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.wallet.address})`, value: w.wallet.address }));
     wChoices.push({ name: '🔙 Back', value: 'BACK' });
 
     const choice = await inquirer.prompt([
@@ -274,13 +277,17 @@ async function showPrivateKey() {
     if (choice.addr === 'BACK') return;
 
     const target = DECRYPTED_WALLETS.find(w => w.wallet.address === choice.addr);
+    if (!target) {
+        console.log("❌ Error: Wallet not found in session.");
+        return;
+    }
     
     // Double confirmation
     const confirm = await inquirer.prompt([
         {
             type: 'rawlist',
             name: 'sure',
-            message: '⚠️  This will display your PRIVATE KEY. Anyone watching can steal your funds. Continue?',
+            message: `⚠️  REVEAL Private Key for '${target.name}'?`,
             choices: ['No', 'Yes, Reveal']
         }
     ]);
@@ -288,33 +295,34 @@ async function showPrivateKey() {
     if (confirm.sure !== 'Yes, Reveal') return;
 
     // Print headers
-    console.log("\n\n");
-    console.log("==========================================");
-    console.log(`🔑 Private Key for ${target.name} (${target.wallet.address}):`);
-    
-    // Print Key (Track lines)
-    const keyLine = `   ${target.wallet.privateKey}`;
-    process.stdout.write("\n" + keyLine + "\n");
-    
-    console.log("\n==========================================");
-    process.stdout.write("\n⏳ Hiding in 5 seconds...");
+    console.log("\n" + "=".repeat(42));
+    console.log(`🔑 PRIVATE KEY REVEALED`);
+    console.log(`Wallet: ${target.name}`);
+    console.log(`Address: ${target.wallet.address}`);
+    console.log("-".repeat(42));
+    console.log(target.wallet.privateKey);
+    console.log("=".repeat(42));
+    console.log("\n⏳ THIS KEY WILL BE HIDDEN IN 5 SECONDS...");
 
     await new Promise(resolve => setTimeout(resolve, 5000));
     
-    // Move cursor up to clear
-    // We printed: \n \n ==== \n 🔑 \n key \n ==== \n ⏳
-    // Roughly 8 lines.
-    const linesToClear = 8;
-    process.stdout.moveCursor(0, -linesToClear);
-    process.stdout.clearScreenDown();
+    // Clear lines
+    const linesToClear = 10;
+    for (let i = 0; i < linesToClear; i++) {
+        process.stdout.moveCursor(0, -1);
+        process.stdout.clearLine(0);
+    }
     
-    console.log("🔒 Private Key Hidden.                         ");
+    console.log("🔒 Private Key has been cleared from screen.   ");
 }
 
 async function deleteWallet() {
-    if (DECRYPTED_WALLETS.length === 0) return;
+    if (DECRYPTED_WALLETS.length === 0) {
+        console.log("❌ No wallets unlocked.");
+        return;
+    }
 
-    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }));
+    const wChoices = DECRYPTED_WALLETS.map(w => ({ name: `${w.name} (${w.wallet.address})`, value: w.wallet.address }));
     wChoices.push({ name: '🔙 Back', value: 'BACK' });
 
     const choice = await inquirer.prompt([
@@ -1668,6 +1676,10 @@ async function main() {
           case 'Rename Wallet':
             await ensureWalletsUnlocked();
             await renameWallet();
+            break;
+          case 'Show Private Key':
+            await ensureWalletsUnlocked();
+            await showPrivateKey();
             break;
           case 'Delete Wallet':
             await ensureWalletsUnlocked();
