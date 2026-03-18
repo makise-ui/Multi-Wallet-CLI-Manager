@@ -7,6 +7,12 @@ import os from 'os';
 import path from 'path';
 import 'dotenv/config'; // Load .env
 import { setupDrive, setupRclone, triggerBackup } from './drive.js';
+import {
+  setupShamirRecovery,
+  recoverFromShares,
+  setupGuardianKey,
+  recoverFromGuardian
+} from './recovery.js';
 
 let PROJECT_ID = process.env.PROJECT_ID;
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
@@ -1652,6 +1658,8 @@ async function main() {
           'Swap Token -> Native',
           'Connect to dApp (WalletConnect)',
           'Settings',
+          'Setup Vault Recovery',
+          'Recover Vault from Backup',
           new inquirer.Separator(),
           'Exit'
         ]
@@ -1708,6 +1716,61 @@ async function main() {
           case 'Settings':
             await changeSettings();
             break;
+
+          case 'Setup Vault Recovery': {
+            const { method } = await inquirer.prompt([{
+              type: 'rawlist',
+              name: 'method',
+              message: 'Choose a recovery method:',
+              choices: ['Shamir Secret Sharing (split password into shares)', 'BIP-39 Guardian Key (mnemonic backup)', '🔙 Back']
+            }]);
+            if (method.includes('Shamir')) {
+              const { t } = await inquirer.prompt([{ type: 'number', name: 't', message: 'Threshold (min shares to recover):', default: 2, validate: v => v >= 2 || 'Must be ≥ 2' }]);
+              const { n } = await inquirer.prompt([{ type: 'number', name: 'n', message: 'Total shares:', default: 3, validate: v => v >= t || `Must be ≥ threshold (${t})` }]);
+              const { pw } = await inquirer.prompt([{ type: 'password', name: 'pw', message: 'Enter vault password to split:', mask: '*' }]);
+              const { shares } = setupShamirRecovery(pw, t, n);
+              console.log('\n🔑  Shamir shares — distribute to guardians:\n');
+              shares.forEach((s, i) => console.log(`  Share ${i+1}/${n}:\n  ${s}\n`));
+              console.log(`⚠️  You need any ${t} of ${n} shares to recover.\n`);
+            } else if (method.includes('BIP-39')) {
+              const { pw } = await inquirer.prompt([{ type: 'password', name: 'pw', message: 'Enter vault password to wrap:', mask: '*' }]);
+              const { mnemonic } = await setupGuardianKey(pw);
+              console.log('\n🔐  Guardian phrase (24 words):\n');
+              const words = mnemonic.split(' ');
+              for (let i = 0; i < words.length; i += 4)
+                console.log(`  ${words.slice(i, i+4).map((w, j) => `${i+j+1}. ${w}`).join('   ')}`);
+              console.log('\n✅  Phrase is NOT stored. Keep it somewhere safe.\n');
+            }
+            break;
+          }
+
+          case 'Recover Vault from Backup': {
+            const { method } = await inquirer.prompt([{
+              type: 'rawlist',
+              name: 'method',
+              message: 'Choose recovery method:',
+              choices: ['Shamir Shares', 'BIP-39 Guardian Mnemonic', '🔙 Back']
+            }]);
+            if (method === 'Shamir Shares') {
+              const { rawShares } = await inquirer.prompt([{ type: 'editor', name: 'rawShares', message: 'Paste shares (one hex per line):' }]);
+              const shares = rawShares.trim().split('\n').map(s => s.trim()).filter(Boolean);
+              try {
+                const { password } = recoverFromShares(shares);
+                console.log(`\n✅  Recovered vault password: ${password}\n`);
+              } catch (e) {
+                console.error('❌  Recovery failed:', e.message);
+              }
+            } else if (method === 'BIP-39 Guardian Mnemonic') {
+              const { mnemonic } = await inquirer.prompt([{ type: 'input', name: 'mnemonic', message: 'Enter your 24-word guardian phrase:' }]);
+              try {
+                const { password } = await recoverFromGuardian(mnemonic);
+                console.log(`\n✅  Recovered vault password: ${password}\n`);
+              } catch (e) {
+                console.error('❌  Recovery failed:', e.message);
+              }
+            }
+            break;
+          }
           case 'Exit':
             console.log("Bye! 👋");
             process.exit(0);

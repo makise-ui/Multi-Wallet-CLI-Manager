@@ -4,7 +4,7 @@
   "type": "module",
   "description": "",
   "bin": {
-    "my-wallet": "./cli.js",
+    "my-wallet": "./cmd.js",
     "my-wallet-tui": "./tui.js"
   },
   "main": "index.js",
@@ -22,6 +22,7 @@
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
     "googleapis": "^168.0.0",
-    "inquirer": "^13.1.0"
+    "inquirer": "^13.1.0",
+    "shamirs-secret-sharing": "^2.0.1"
   }
 }
