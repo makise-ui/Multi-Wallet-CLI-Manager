@@ -1238,7 +1238,7 @@ async function checkPortfolio() {
                 
                 // Scan Tokens
                 if (PREDEFINED_TOKENS[netKey]) {
-                    for (const t of PREDEFINED_TOKENS[netKey]) {
+                    const tokenPromises = PREDEFINED_TOKENS[netKey].map(async (t) => {
                         try {
                             const contract = new ethers.Contract(t.address, ERC20_ABI, provider);
                             const tBalWei = await contract.balanceOf(w.address);
@@ -1250,7 +1250,8 @@ async function checkPortfolio() {
                                 }
                             }
                         } catch(e) {}
-                    }
+                    });
+                    await Promise.all(tokenPromises);
                 }
             } catch (e) {
                 // Ignore network errors
