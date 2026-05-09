@@ -107,7 +107,7 @@ async function refreshBalances() {
 
         const provider = new ethers.JsonRpcProvider(NETWORKS[currentNetwork].rpc);
 
-        for (const token of tokensToCheck) {
+        const tokenPromises = tokensToCheck.map(async (token) => {
             try {
                 const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
                 const balWei = await contract.balanceOf(wallet.wallet.address);
@@ -121,10 +121,18 @@ async function refreshBalances() {
                         const tPrice = await getPrice(token.coingeckoId);
                         valStr = (balFloat * tPrice).toFixed(2);
                     }
-                    tableData.push([symbol, balFloat.toFixed(4), valStr]);
+                    return [symbol, balFloat.toFixed(4), valStr];
                 }
             } catch (e) {
                 // Ignore error for specific token
+            }
+            return null;
+        });
+
+        const tokenResults = await Promise.all(tokenPromises);
+        for (const res of tokenResults) {
+            if (res) {
+                tableData.push(res);
             }
         }
 
