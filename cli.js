@@ -483,13 +483,26 @@ const PREDEFINED_TOKENS = {
     ]
 };
 
+const priceCache = {};
+
 async function getPrice(coingeckoId) {
     if (!coingeckoId) return 0;
     try {
         const currency = USER_SETTINGS.currency.toLowerCase();
-        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=${currency}`);
-        const data = await res.json();
-        return data[coingeckoId] ? data[coingeckoId][currency] : 0;
+        const cacheKey = `${coingeckoId}-${currency}`;
+        if (priceCache[cacheKey]) return priceCache[cacheKey];
+
+        priceCache[cacheKey] = (async () => {
+            try {
+                const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=${currency}`);
+                const data = await res.json();
+                return data[coingeckoId] ? data[coingeckoId][currency] : 0;
+            } catch (err) {
+                delete priceCache[cacheKey];
+                throw err;
+            }
+        })();
+        return await priceCache[cacheKey];
     } catch (e) {
         return 0; // API failure or rate limit
     }
