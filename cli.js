@@ -483,16 +483,24 @@ const PREDEFINED_TOKENS = {
     ]
 };
 
-async function getPrice(coingeckoId) {
-    if (!coingeckoId) return 0;
-    try {
-        const currency = USER_SETTINGS.currency.toLowerCase();
-        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=${currency}`);
-        const data = await res.json();
-        return data[coingeckoId] ? data[coingeckoId][currency] : 0;
-    } catch (e) {
-        return 0; // API failure or rate limit
-    }
+const priceCache = {};
+function getPrice(coingeckoId) {
+    if (!coingeckoId) return Promise.resolve(0);
+    if (priceCache[coingeckoId]) return priceCache[coingeckoId];
+
+    const fetchPromise = (async () => {
+        try {
+            const currency = USER_SETTINGS.currency.toLowerCase();
+            const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=${currency}`);
+            const data = await res.json();
+            return data[coingeckoId] ? data[coingeckoId][currency] : 0;
+        } catch (e) {
+            return 0; // API failure or rate limit
+        }
+    })();
+
+    priceCache[coingeckoId] = fetchPromise;
+    return fetchPromise;
 }
 
 async function manageTokens() {
@@ -1177,6 +1185,11 @@ async function checkBalance() {
 
   if (tokensToCheck.length > 0) {
       console.log("\n💎 Checking Tokens:");
+
+      // Pre-fetch all token prices concurrently
+      const uniqueGeckoIds = [...new Set(tokensToCheck.map(t => t.coingeckoId).filter(Boolean))];
+      await Promise.all(uniqueGeckoIds.map(id => getPrice(id)));
+
       for (const token of tokensToCheck) {
           try {
               const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
