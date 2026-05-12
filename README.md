@@ -13,7 +13,9 @@ To build or modify this tool, you need a **WalletConnect Project ID**:
 1.  Go to [WalletConnect Cloud](https://cloud.walletconnect.com/).
 2.  Sign up and create a new project.
 3.  Copy the **Project ID**.
-4.  Replace the `PROJECT_ID` constant in `cli.js` with yours.
+4.  Save it to `~/.my-cli-wallet/.env` as `PROJECT_ID=your_id_here`.
+
+You can also set it interactively on first run.
 
 ## ⛓️ Multi-Chain Support
 

@@ -24,5 +24,8 @@
     "googleapis": "^168.0.0",
     "inquirer": "^13.1.0",
     "shamirs-secret-sharing": "^2.0.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.59.1"
   }
 }

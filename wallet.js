@@ -1,3 +1,7 @@
+// wallet.js — Standalone WalletConnect v2 signer demo.
+// This file is NOT imported by cli.js, cmd.js, or tui.js.
+// It can be run directly for testing or as a reference implementation.
+
 import { SignClient } from "@walletconnect/sign-client";
 import { ethers } from "ethers";
 

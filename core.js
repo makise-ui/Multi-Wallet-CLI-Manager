@@ -42,15 +42,36 @@ export const ERC20_ABI = [
     "function allowance(address owner, address spender) view returns (uint256)"
 ];
 
+export const ROUTERS = {
+    "ethereum": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "bsc": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+    "polygon": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+    "celo": "0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121"
+};
+
+export const ROUTER_ABI = [
+    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+    "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+    "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external"
+];
+
+export const WNATIVE = {
+    "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "bsc": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "polygon": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "celo": "0x471EcE3750Da237f93b8E339c536989b8978a438"
+};
+
 // --- State ---
 export let DECRYPTED_WALLETS = [];
-export let USER_SETTINGS = { 
+export let USER_SETTINGS = {
     currency: 'USD',
     defaultNetwork: 'ethereum',
     gasLimitBuffer: '0',
     backupMethod: null,
     rcloneRemote: null,
-    savedTokens: [] 
+    savedTokens: [],
+    customRpcs: {}
 };
 
 // --- Methods ---
@@ -59,6 +80,7 @@ export function loadSettings() {
     if (fs.existsSync(SETTINGS_FILE)) {
         const loaded = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
         if (!loaded.savedTokens) loaded.savedTokens = [];
+        if (!loaded.customRpcs) loaded.customRpcs = {};
         USER_SETTINGS = { ...USER_SETTINGS, ...loaded };
     }
     return USER_SETTINGS;
@@ -79,17 +101,19 @@ export function hasEncryptedWallets() {
 export async function unlockWallets(password) {
     if (!fs.existsSync(WALLETS_FILE)) return [];
     const rawWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
-    
+    if (rawWallets.length === 0) return [];
+
     DECRYPTED_WALLETS = [];
-    for (const w of rawWallets) {
-        if (w.privateKey) {
-            // Migration needed, but for core we assume encrypted or we fail?
-            // Let's support loading plain if generic, but usually we want to enforce encryption
-            // For TUI, we assume encrypted.
-            throw new Error("Legacy plain-text wallets found. Please run CLI to migrate.");
+    if (rawWallets[0].privateKey) {
+        for (const w of rawWallets) {
+            DECRYPTED_WALLETS.push({ name: w.name, wallet: new ethers.Wallet(w.privateKey) });
         }
-        const wallet = await ethers.Wallet.fromEncryptedJson(w.data, password);
-        DECRYPTED_WALLETS.push({ name: w.name, wallet: wallet });
+    } else {
+        if (!password) throw new Error('Vault password required for encrypted wallets.');
+        for (const w of rawWallets) {
+            const wallet = await ethers.Wallet.fromEncryptedJson(w.data, password);
+            DECRYPTED_WALLETS.push({ name: w.name, wallet });
+        }
     }
     return DECRYPTED_WALLETS;
 }
@@ -109,7 +133,62 @@ export async function getPrice(coingeckoId) {
 export async function getNativeBalance(walletAddress, networkKey) {
     const net = NETWORKS[networkKey];
     if (!net) return "0.0";
-    const provider = new ethers.JsonRpcProvider(net.rpc);
+    const provider = getProvider(networkKey);
     const balWei = await provider.getBalance(walletAddress);
     return ethers.formatEther(balWei);
+}
+
+export function getProvider(networkKey) {
+    const net = NETWORKS[networkKey];
+    if (!net) throw new Error(`Unknown network: ${networkKey}`);
+    const rpc = USER_SETTINGS.customRpcs?.[networkKey] || net.rpc;
+    return new ethers.JsonRpcProvider(rpc);
+}
+
+export async function sendNativeTransfer(connectedSigner, recipient, amountEther) {
+    const amountWei = ethers.parseEther(amountEther);
+    const txRequest = { to: recipient, value: amountWei };
+    if (USER_SETTINGS.gasLimitBuffer && USER_SETTINGS.gasLimitBuffer !== '0') {
+        const estimatedGas = await connectedSigner.estimateGas(txRequest);
+        txRequest.gasLimit = estimatedGas + BigInt(USER_SETTINGS.gasLimitBuffer);
+    }
+    return await connectedSigner.sendTransaction(txRequest);
+}
+
+export async function sendTokenTransfer(connectedSigner, tokenAddress, recipient, amount, decimals) {
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, connectedSigner);
+    const amountWei = ethers.parseUnits(amount, decimals);
+    return await contract.transfer(recipient, amountWei);
+}
+
+export async function checkAndApproveToken(signer, tokenAddress, spender, amountIn) {
+    const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+    const allowance = await tokenContract.allowance(signer.address, spender);
+    if (allowance < amountIn) {
+        const txApprove = await tokenContract.approve(spender, ethers.MaxUint256);
+        await txApprove.wait();
+        return txApprove.hash;
+    }
+    return null;
+}
+
+export async function executeSwap(signer, networkKey, tokenData, amountIn) {
+    const routerAddress = ROUTERS[networkKey];
+    const wnative = WNATIVE[networkKey];
+    if (!routerAddress || !wnative) {
+        throw new Error('Swap not supported on this network.');
+    }
+    const path = [tokenData.address, wnative];
+    const routerContract = new ethers.Contract(routerAddress, ROUTER_ABI, signer);
+    const amounts = await routerContract.getAmountsOut(amountIn, path);
+    const amountOutMin = amounts[1] * 95n / 100n;
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+    const txSwap = await routerContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        amountIn,
+        amountOutMin,
+        path,
+        signer.address,
+        deadline
+    );
+    return txSwap;
 }

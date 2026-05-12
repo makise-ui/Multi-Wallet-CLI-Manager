@@ -23,6 +23,8 @@
  *   recovery setup-guardian         Interactive guardian-key setup wizard
  *   recovery recover-shamir         Reconstruct vault password from shares
  *   recovery recover-guardian       Reconstruct vault password from mnemonic
+ *   config rpc --network <key>       Configure custom RPC URL for a network
+ *   config rpc --network <key> --reset  Reset to default RPC
  */
 
 import { parseArgs }  from 'node:util';
@@ -32,6 +34,13 @@ import path           from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs             from 'node:fs';
 import os             from 'node:os';
+
+import {
+  unlockWallets,
+  getProvider,
+  USER_SETTINGS,
+  saveSettings
+} from './core.js';
 
 // ── Load ethers + recovery helpers (lazy, only when needed) ──────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -83,36 +92,6 @@ function die(msg, code = 1) {
     process.exit(code);
 }
 
-function loadRaw() {
-    if (!fs.existsSync(WALLETS_FILE)) return [];
-    return JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
-}
-
-async function unlockWallets(password) {
-    const { ethers } = await import('ethers');
-    const raw = loadRaw();
-    if (raw.length === 0) return [];
-
-    if (raw[0].privateKey) {
-        // Unencrypted
-        return raw.map(w => ({ name: w.name, wallet: new ethers.Wallet(w.privateKey) }));
-    }
-
-    if (!password) die('Vault is encrypted. Provide --pass <password> or set WALLET_PASS env var.');
-
-    const wallets = [];
-    for (const w of raw) {
-        let wallet;
-        try {
-            wallet = await ethers.Wallet.fromEncryptedJson(w.data, password);
-        } catch {
-            die('Wrong vault password.');
-        }
-        wallets.push({ name: w.name, wallet });
-    }
-    return wallets;
-}
-
 function stdinLine(prompt) {
     return new Promise(resolve => {
         const rl = createInterface({ input: process.stdin, output: process.stderr });
@@ -142,6 +121,10 @@ Commands:
   import   --name <name>     Import wallet via --pk or stdin
   show-key --wallet <name>   Print private key
 
+Config commands:
+  config rpc --network <key> [--url <url> | --reset]
+                             Set or reset custom RPC URL for a network
+
 Recovery commands:
   recovery setup-shamir      Set up Shamir secret-sharing recovery
   recovery setup-guardian    Set up BIP-39 guardian-key recovery
@@ -152,6 +135,8 @@ Examples:
   WALLET_PASS=secret my-wallet list --json
   my-wallet show-key --wallet "Main" --pass secret
   my-wallet recovery setup-shamir
+  my-wallet config rpc --network bsc --url https://custom.rpc
+  my-wallet config rpc --network bsc --reset
 `);
     process.exit(0);
 }
@@ -251,7 +236,7 @@ async function main() {
     // ── balance ───────────────────────────────────────────────────────────────
     if (command === 'balance') {
         const { ethers } = await import('ethers');
-        const provider = new ethers.JsonRpcProvider('https://eth.llamarpc.com');
+        const provider = getProvider('ethereum');
         const wallets  = await unlockWallets(vaultPass);
         const target   = flags.wallet ? wallets.filter(w => w.name === flags.wallet) : wallets;
         if (target.length === 0) die(`Wallet "${flags.wallet}" not found.`);
@@ -289,6 +274,29 @@ async function main() {
             case 'recover-guardian':  await wizardRecoverGuardian(); break;
             default: die(`Unknown recovery sub-command: ${subcommand}`);
         }
+        return;
+    }
+
+    // ── config ────────────────────────────────────────────────────────────────
+    if (command === 'config') {
+        if (!subcommand) die('Specify a config sub-command. Run --help for details.');
+        if (subcommand === 'rpc') {
+            if (!flags.network) die('--network <key> is required (ethereum, bsc, polygon, celo).');
+            if (flags.reset) {
+                const newCustomRpcs = { ...(USER_SETTINGS.customRpcs || {}) };
+                delete newCustomRpcs[flags.network];
+                saveSettings({ customRpcs: newCustomRpcs });
+                out(`Reset RPC for ${flags.network} to default.`);
+            } else if (flags.url) {
+                const newCustomRpcs = { ...(USER_SETTINGS.customRpcs || {}), [flags.network]: flags.url };
+                saveSettings({ customRpcs: newCustomRpcs });
+                out(`Set custom RPC for ${flags.network} to ${flags.url}.`);
+            } else {
+                die('Provide --url <url> or --reset for config rpc.');
+            }
+            return;
+        }
+        die(`Unknown config sub-command: "${subcommand}".`);
         return;
     }
 

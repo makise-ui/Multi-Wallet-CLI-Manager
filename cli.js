@@ -13,6 +13,21 @@ import {
   setupGuardianKey,
   recoverFromGuardian
 } from './recovery.js';
+import {
+  NETWORKS,
+  PREDEFINED_TOKENS,
+  ERC20_ABI,
+  ROUTERS,
+  ROUTER_ABI,
+  WNATIVE,
+  DECRYPTED_WALLETS,
+  USER_SETTINGS,
+  loadSettings,
+  saveSettings,
+  getProvider,
+  getNativeBalance,
+  getPrice
+} from './core.js';
 
 let PROJECT_ID = process.env.PROJECT_ID;
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
@@ -46,9 +61,10 @@ if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
 const WALLETS_FILE = path.join(CONFIG_DIR, 'my_wallets.json');
 const TRASH_FILE = path.join(CONFIG_DIR, 'trash_wallets.json');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
-const RPC_URL = "https://eth.llamarpc.com";
 
-// ... (Rest of imports and state) ...
+let SESSION_PASSWORD = null;
+
+loadSettings();
 
 // Helper to ensure wallets are unlocked before actions
 async function ensureWalletsUnlocked() {
@@ -202,7 +218,7 @@ async function connectWallet(predefinedUri = null) {
                  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
                  result = await signer.signTypedData(parsedData.domain, parsedData.types, parsedData.message);
             } else if (request.method === "eth_sendTransaction") {
-                const provider = new ethers.JsonRpcProvider(RPC_URL);
+                const provider = getProvider('ethereum');
                 const connectedWallet = signer.connect(provider);
                 
                 const txParams = request.params[0];
@@ -370,20 +386,24 @@ async function deleteWallet() {
     }
 
     const deletedWallet = rawWallets.splice(walletIndex, 1)[0];
-    fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+    try {
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
 
-    // Add to Trash
-    let trash = [];
-    if (fs.existsSync(TRASH_FILE)) {
-        trash = JSON.parse(fs.readFileSync(TRASH_FILE, 'utf8'));
+        // Add to Trash
+        let trash = [];
+        if (fs.existsSync(TRASH_FILE)) {
+            trash = JSON.parse(fs.readFileSync(TRASH_FILE, 'utf8'));
+        }
+        trash.push(deletedWallet);
+        fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
+
+        // Update Memory
+        DECRYPTED_WALLETS = DECRYPTED_WALLETS.filter(w => w.wallet.address !== choice.addr);
+        console.log("🗑️ Wallet moved to Trash. You can restore it from Settings.");
+    } catch (e) {
+        console.error(`❌ Failed to delete wallet: ${e.message}`);
+        return;
     }
-    trash.push(deletedWallet);
-    fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
-
-    // Update Memory
-    DECRYPTED_WALLETS = DECRYPTED_WALLETS.filter(w => w.wallet.address !== choice.addr);
-    
-    console.log("🗑️ Wallet moved to Trash. You can restore it from Settings.");
     await triggerBackup(USER_SETTINGS);
 }
 
@@ -413,11 +433,16 @@ async function restoreWallet() {
     if (choice.idx === 'BACK') return;
 
     const restored = trash.splice(choice.idx, 1)[0];
-    fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
+    try {
+        fs.writeFileSync(TRASH_FILE, JSON.stringify(trash, null, 2));
 
-    const rawWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
-    rawWallets.push(restored);
-    fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+        const rawWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8'));
+        rawWallets.push(restored);
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+    } catch (e) {
+        console.error(`❌ Failed to restore wallet: ${e.message}`);
+        return;
+    }
 
     // Unlock it into memory
     const password = await getPassword();
@@ -432,68 +457,7 @@ async function restoreWallet() {
 }
 
 
-let DECRYPTED_WALLETS = []; 
-let SESSION_PASSWORD = null;
-let USER_SETTINGS = { 
-    currency: 'USD',
-    defaultNetwork: 'ethereum',
-    gasLimitBuffer: '0',
-    backupMethod: null, // 'rclone' or 'gapi'
-    rcloneRemote: null,
-    encryptionDisabled: false,
-    savedTokens: [] // { symbol: "USDT", address: "0x...", network: "bsc", decimals: 18 }
-};
 
-// Load Settings
-if (fs.existsSync(SETTINGS_FILE)) {
-    const loaded = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
-    // Migration: Ensure savedTokens exists
-    if (!loaded.savedTokens) loaded.savedTokens = [];
-    USER_SETTINGS = { ...USER_SETTINGS, ...loaded };
-}
-
-function saveSettings() {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(USER_SETTINGS, null, 2));
-    triggerBackup(USER_SETTINGS);
-}
-
-// Supported Networks
-const NETWORKS = {
-    "ethereum": { name: "Ethereum Mainnet", rpc: "https://eth.llamarpc.com", chainId: 1, currency: "ETH", coingeckoId: "ethereum" },
-    "bsc": { name: "Binance Smart Chain", rpc: "https://bsc-dataseed.binance.org", chainId: 56, currency: "BNB", coingeckoId: "binancecoin" },
-    "polygon": { name: "Polygon (Matic)", rpc: "https://polygon-rpc.com", chainId: 137, currency: "POL", coingeckoId: "matic-network" },
-    "celo": { name: "Celo Mainnet", rpc: "https://forno.celo.org", chainId: 42220, currency: "CELO", coingeckoId: "celo" }
-};
-
-// Common Token Addresses
-const PREDEFINED_TOKENS = {
-    "ethereum": [
-        { symbol: "USDT", address: "0xdac17f958d2ee523a2206206994597c13d831ec7", decimals: 6, coingeckoId: "tether" }
-    ],
-    "bsc": [
-        { symbol: "JMPT", address: "0x88d7e9b65dc24cf54f5edef929225fc3e1580c25", decimals: 18, coingeckoId: "jumptoken" },
-        { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18, coingeckoId: "tether" }
-    ],
-    "polygon": [
-        { symbol: "JMPT", address: "0x88d7e9b65dc24cf54f5edef929225fc3e1580c25", decimals: 18, coingeckoId: "jumptoken" },
-        { symbol: "USDT", address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", decimals: 6, coingeckoId: "tether" }
-    ],
-    "celo": [
-        { symbol: "JMPT", address: "0x88d7e9b65dc24cf54f5edef929225fc3e1580c25", decimals: 18, coingeckoId: "jumptoken" }
-    ]
-};
-
-async function getPrice(coingeckoId) {
-    if (!coingeckoId) return 0;
-    try {
-        const currency = USER_SETTINGS.currency.toLowerCase();
-        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=${currency}`);
-        const data = await res.json();
-        return data[coingeckoId] ? data[coingeckoId][currency] : 0;
-    } catch (e) {
-        return 0; // API failure or rate limit
-    }
-}
 
 async function manageTokens() {
     const action = await inquirer.prompt([
@@ -580,7 +544,7 @@ async function manageTokens() {
         // 3. Fetch Details & Save
         try {
             console.log("⏳ Verifying on-chain...");
-            const provider = new ethers.JsonRpcProvider(network.rpc);
+            const provider = getProvider(networkKey);
             const contract = new ethers.Contract(address, ERC20_ABI, provider);
             const symbol = await contract.symbol();
             const decimals = await contract.decimals();
@@ -596,7 +560,7 @@ async function manageTokens() {
                     decimals: Number(decimals),
                     coingeckoId: coingeckoId // Store ID for price data!
                 });
-                saveSettings();
+                saveSettings({ savedTokens: USER_SETTINGS.savedTokens });
                 console.log("💾 Token Saved!");
             }
         } catch (e) {
@@ -615,7 +579,7 @@ async function manageTokens() {
         }]);
         
         USER_SETTINGS.savedTokens.splice(choice.token, 1);
-        saveSettings();
+        saveSettings({ savedTokens: USER_SETTINGS.savedTokens });
         console.log("🗑️ Token Removed.");
     }
     
@@ -634,6 +598,7 @@ async function changeSettings() {
                 'Default Network',
                 'Gas Limit Buffer (Advanced)',
                 'Manage Custom Tokens',
+                'Configure Custom RPC URLs',
                 'Backup Configuration',
                 'Restore Deleted Wallet',
                 'Toggle Vault Encryption',
@@ -679,12 +644,52 @@ async function changeSettings() {
             USER_SETTINGS.backupMethod = null;
             console.log("🚫 Backup disabled.");
         }
-        saveSettings();
+        saveSettings({ backupMethod: USER_SETTINGS.backupMethod, rcloneRemote: USER_SETTINGS.rcloneRemote });
         return;
     }
 
     if (action.setting === 'Manage Custom Tokens') {
         await manageTokens();
+        return;
+    }
+
+    if (action.setting === 'Configure Custom RPC URLs') {
+        const netKeys = Object.keys(NETWORKS);
+        const netChoice = await inquirer.prompt([
+            {
+                type: 'rawlist',
+                name: 'key',
+                message: 'Select network to configure:',
+                choices: netKeys.map(key => {
+                    const custom = USER_SETTINGS.customRpcs?.[key];
+                    return { name: `${NETWORKS[key].name} ${custom ? '(custom)' : '(default)'}`, value: key };
+                })
+            }
+        ]);
+        const currentCustom = USER_SETTINGS.customRpcs?.[netChoice.key];
+        const rpcChoice = await inquirer.prompt([
+            {
+                type: 'rawlist',
+                name: 'mode',
+                message: `Current: ${currentCustom || NETWORKS[netChoice.key].rpc}`,
+                choices: [
+                    { name: `Use default (${NETWORKS[netChoice.key].rpc})`, value: 'default' },
+                    { name: 'Set custom RPC URL', value: 'custom' }
+                ]
+            }
+        ]);
+        const newCustomRpcs = { ...(USER_SETTINGS.customRpcs || {}) };
+        if (rpcChoice.mode === 'custom') {
+            const urlInput = await inquirer.prompt([
+                { type: 'input', name: 'url', message: 'Enter custom RPC URL:', default: currentCustom || '' }
+            ]);
+            newCustomRpcs[netChoice.key] = urlInput.url.trim();
+            console.log(`✅ Custom RPC set for ${NETWORKS[netChoice.key].name}.`);
+        } else {
+            delete newCustomRpcs[netChoice.key];
+            console.log(`✅ Reverted to default RPC for ${NETWORKS[netChoice.key].name}.`);
+        }
+        saveSettings({ customRpcs: newCustomRpcs });
         return;
     }
 
@@ -721,32 +726,10 @@ async function changeSettings() {
         USER_SETTINGS.gasLimitBuffer = answer.buffer;
     }
 
-    saveSettings();
+    saveSettings({ currency: USER_SETTINGS.currency, defaultNetwork: USER_SETTINGS.defaultNetwork, gasLimitBuffer: USER_SETTINGS.gasLimitBuffer });
     console.log(`✅ Settings saved!`);
 }
 
-// Router Addresses (Uniswap V2 style)
-const ROUTERS = {
-    "ethereum": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Uniswap V2
-    "bsc": "0x10ED43C718714eb63d5aA57B78B54704E256024E",      // PancakeSwap V2
-    "polygon": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",  // QuickSwap
-    "celo": "0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121"      // Ubeswap (example, verify if V2 compatible)
-};
-
-const ROUTER_ABI = [
-    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
-    "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
-    "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external"
-];
-
-const ERC20_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function decimals() view returns (uint8)",
-    "function symbol() view returns (string)",
-    "function transfer(address to, uint amount) returns (bool)",
-    "function approve(address spender, uint amount) returns (bool)",
-    "function allowance(address owner, address spender) view returns (uint256)"
-];
 
 // --- Wallet Management ---
 
@@ -781,25 +764,35 @@ async function toggleEncryption() {
             name: w.name,
             privateKey: w.wallet.privateKey
         }));
-        
-        fs.writeFileSync(WALLETS_FILE, JSON.stringify(plainStore, null, 2));
-        SESSION_PASSWORD = null; // Clear password
-        console.log("🔓 Wallets decrypted and saved.");
-        
+
+        try {
+            fs.writeFileSync(WALLETS_FILE, JSON.stringify(plainStore, null, 2));
+            SESSION_PASSWORD = null; // Clear password
+            console.log("🔓 Wallets decrypted and saved.");
+        } catch (e) {
+            console.error(`❌ Failed to decrypt wallet storage: ${e.message}`);
+            return;
+        }
+
     } else {
         // Plain -> Encrypted
         console.log("🔐 Encrypting wallet vault...");
         const password = await getPassword(true); // Ask for new password
-        
+
         const encryptedStore = [];
         for (const w of DECRYPTED_WALLETS) {
             console.log(`Encrypting ${w.name}...`);
             const encryptedJson = await w.wallet.encrypt(password);
             encryptedStore.push({ name: w.name, data: encryptedJson });
         }
-        
-        fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
-        console.log("✅ Wallets encrypted and saved.");
+
+        try {
+            fs.writeFileSync(WALLETS_FILE, JSON.stringify(encryptedStore, null, 2));
+            console.log("✅ Wallets encrypted and saved.");
+        } catch (e) {
+            console.error(`❌ Failed to encrypt wallet storage: ${e.message}`);
+            return;
+        }
     }
     await triggerBackup(USER_SETTINGS);
 }
@@ -887,7 +880,7 @@ async function initializeWallets() {
                 if (!confirm2.ok) return initializeWallets();
 
                 USER_SETTINGS.encryptionDisabled = true;
-                saveSettings();
+                saveSettings({ encryptionDisabled: true });
                 
                 DECRYPTED_WALLETS = rawWallets.map(w => ({ name: w.name, wallet: new ethers.Wallet(w.privateKey) }));
                 console.log("🔓 Unlocked unencrypted wallets.");
@@ -925,7 +918,7 @@ async function initializeWallets() {
 
 async function saveEncryptedWallet(name, wallet) {
     const rawWallets = loadWalletsRaw();
-    
+
     if (USER_SETTINGS.encryptionDisabled) {
         rawWallets.push({ name: name, privateKey: wallet.privateKey });
     } else {
@@ -934,12 +927,15 @@ async function saveEncryptedWallet(name, wallet) {
         const encryptedJson = await wallet.encrypt(password);
         rawWallets.push({ name: name, data: encryptedJson });
     }
-    
-    fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
-    
-    // Update memory
-    DECRYPTED_WALLETS.push({ name: name, wallet: wallet });
-    console.log(`✅ Wallet '${name}' saved.`);
+
+    try {
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(rawWallets, null, 2));
+        DECRYPTED_WALLETS.push({ name: name, wallet: wallet });
+        console.log(`✅ Wallet '${name}' saved.`);
+    } catch (e) {
+        console.error(`❌ Failed to save wallet: ${e.message}`);
+        return;
+    }
     await triggerBackup(USER_SETTINGS);
 }
 
@@ -968,7 +964,7 @@ async function ensureEncryptionPreference() {
             return ensureEncryptionPreference(); // Back to start
         }
     }
-    saveSettings();
+    saveSettings({ encryptionDisabled: USER_SETTINGS.encryptionDisabled });
 }
 
 async function createNewWallet() {
@@ -1067,18 +1063,23 @@ async function renameWallet() {
     const target = DECRYPTED_WALLETS.find(w => w.wallet.address === choice.walletAddr);
     target.name = newName.name;
 
-    // Update on disk 
+    // Update on disk
     const newRawStore = [];
     const password = await getPassword();
     console.log("⏳ Re-saving wallet names...");
-    
+
     for (const w of DECRYPTED_WALLETS) {
         const encryptedJson = await w.wallet.encrypt(password);
         newRawStore.push({ name: w.name, data: encryptedJson });
     }
-    
-    fs.writeFileSync(WALLETS_FILE, JSON.stringify(newRawStore, null, 2));
-    console.log("✅ Wallet renamed.");
+
+    try {
+        fs.writeFileSync(WALLETS_FILE, JSON.stringify(newRawStore, null, 2));
+        console.log("✅ Wallet renamed.");
+    } catch (e) {
+        console.error(`❌ Failed to rename wallet: ${e.message}`);
+        return;
+    }
     await triggerBackup(USER_SETTINGS);
 }
 
@@ -1142,11 +1143,12 @@ async function checkBalance() {
   if (walletChoice.walletAddress === 'BACK') return;
 
   const selectedWalletData = wallets.find(w => w.address === walletChoice.walletAddress);
-  
+
   const network = await selectNetwork(true); // true = include back option
   if (network === 'BACK') return;
 
-  const provider = new ethers.JsonRpcProvider(network.rpc);
+  const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
+  const provider = getProvider(networkKey);
 
   console.log(`⏳ Fetching balances on ${network.name}...`);
   
@@ -1159,8 +1161,8 @@ async function checkBalance() {
 💰 Native: ${nativeBalance} ${network.currency} (≈ ${nativeValue} ${USER_SETTINGS.currency})`);
 
   // 2. Check Tokens (Predefined + Saved)
-  const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
-  
+  // networkKey already determined above
+
   // Build list of tokens to check
   const tokensToCheck = [];
   
@@ -1228,7 +1230,7 @@ async function checkPortfolio() {
         // Scan Networks (Parallel)
         const promises = Object.keys(NETWORKS).map(async (netKey) => {
             try {
-                const provider = new ethers.JsonRpcProvider(NETWORKS[netKey].rpc);
+                const provider = getProvider(netKey);
                 const balWei = await provider.getBalance(w.address);
                 const bal = parseFloat(ethers.formatEther(balWei));
                 if (bal > 0) {
@@ -1294,12 +1296,12 @@ async function transferAsset() {
     // 2. Select Network
     const network = await selectNetwork(true);
     if (network === 'BACK') return;
-    
-    const provider = new ethers.JsonRpcProvider(network.rpc);
+
+    const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
+    const provider = getProvider(networkKey);
     const connectedSigner = signer.connect(provider);
 
     // 3. Select Asset
-    const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
     const assetOptions = [
         { name: `Native Coin (${network.currency})`, value: 'native' }
     ];
@@ -1483,7 +1485,7 @@ async function swapToken() {
         return;
     }
 
-    const provider = new ethers.JsonRpcProvider(network.rpc);
+    const provider = getProvider(networkKey);
     const connectedSigner = signer.connect(provider);
 
     // 3. Select Token
@@ -1580,15 +1582,6 @@ async function swapToken() {
     }
 
     // 6. Execute Swap
-    // Native wrapped address is needed for path.
-    // WETH/WBNB addresses
-    const WNATIVE = {
-        "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        "bsc": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-        "polygon": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-        "celo": "0x471EcE3750Da237f93b8E339c536989b8978a438"
-    };
-
     if (!WNATIVE[networkKey]) {
         console.log("❌ WNative address missing for this chain.");
         return;
@@ -1596,21 +1589,24 @@ async function swapToken() {
 
     const path = [tokenData.address, WNATIVE[networkKey]];
     const routerContract = new ethers.Contract(routerAddress, ROUTER_ABI, connectedSigner);
-    
-    // Get Quote
-    // try {
-    //    const amounts = await routerContract.getAmountsOut(amountIn, path);
-    //    const amountOutMin = amounts[1] * 95n / 100n; // 5% slippage tolerance (simple)
-    // } catch ... (skip quote for speed/simplicity or use 0 min for now with caution)
-    
+
+    let amountOutMin = 0n;
+    try {
+        const amounts = await routerContract.getAmountsOut(amountIn, path);
+        amountOutMin = amounts[1] * 95n / 100n; // 5% slippage tolerance
+        console.log(`📊 Expected output: ${ethers.formatEther(amounts[1])} native (min: ${ethers.formatEther(amountOutMin)})`);
+    } catch (e) {
+        console.log(`⚠️ Could not get swap quote: ${e.message}. Proceeding without slippage protection.`);
+    }
+
     console.log("🚀 Swapping...");
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
-    
+
     try {
         // Use SupportingFeeOnTransferTokens to be safe with all tokens
         const txSwap = await routerContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
             amountIn,
-            0, // accept any amount of ETH (risky but simple for CLI). Ideally use getAmountsOut
+            amountOutMin,
             path,
             selectedWalletData.address,
             deadline
