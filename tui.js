@@ -23,14 +23,18 @@ import {
     getNativeBalance,
     getPrice,
     USER_SETTINGS,
-    PREDEFINED_TOKENS,
     ERC20_ABI,
     getProvider,
     checkAndApproveToken,
     executeSwap,
     ROUTERS,
     WNATIVE,
-    saveSettings
+    saveSettings,
+    searchCoinGeckoTokens,
+    resolveCoinGeckoToken,
+    readTokenMetadata,
+    saveTokenForNetwork,
+    getWalletTokenBalances
 } from './core.js';
 
 import {
@@ -426,6 +430,78 @@ function promptForm(title, fields) {
     return new Promise(resolve => createForm(title, fields, resolve, () => resolve(null)));
 }
 
+function formatTokenSearchResult(token) {
+    return `${token.name} (${String(token.symbol).toUpperCase()}) - Rank #${token.marketCapRank || 'N/A'}`;
+}
+
+async function promptTokenBySearch(networkKey) {
+    const query = await promptForm('Find Token', [
+        { name: 'query', label: 'Name or Symbol' }
+    ]);
+    if (!query || !query.query.trim()) return null;
+
+    setLoading('Searching CoinGecko');
+    let results;
+    try {
+        results = await searchCoinGeckoTokens(query.query);
+    } catch (e) {
+        log(`Token search failed: ${e.message}`, 'error');
+        closeOverlay();
+        return null;
+    }
+    closeOverlay();
+
+    if (results.length === 0) {
+        log('No matching tokens found.', 'warn');
+        return null;
+    }
+
+    const pick = await showListPicker('Select Token', results.map(formatTokenSearchResult));
+    if (!pick) return null;
+
+    setLoading('Resolving token');
+    try {
+        const token = await resolveCoinGeckoToken(results[pick.index].id, networkKey);
+        const saved = saveTokenForNetwork(token);
+        log(`Added ${saved.symbol} on ${networkKey}.`, 'success');
+        return saved;
+    } catch (e) {
+        log(`Token resolution failed: ${e.message}`, 'error');
+        return null;
+    } finally {
+        closeOverlay();
+    }
+}
+
+async function promptTokenByAddress(networkKey) {
+    const data = await promptForm('Add Token', [
+        { name: 'addr', label: 'Contract Address' }
+    ]);
+    if (!data || !data.addr.trim()) return null;
+
+    setLoading('Verifying token');
+    try {
+        const token = await readTokenMetadata(data.addr, networkKey);
+        const saved = saveTokenForNetwork(token);
+        log(`Added ${saved.symbol} on ${networkKey}.`, 'success');
+        return saved;
+    } catch (e) {
+        log(`Token verification failed: ${e.message}`, 'error');
+        return null;
+    } finally {
+        closeOverlay();
+    }
+}
+
+async function getHeldTokensForWallet(walletAddress, networkKey, provider) {
+    try {
+        return await getWalletTokenBalances(walletAddress, networkKey, { provider });
+    } catch (e) {
+        log(`Token balance discovery failed: ${e.message}`, 'warn');
+        return [];
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  DATA FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -462,29 +538,16 @@ async function refreshBalances() {
         const val      = (parseFloat(bal) * price).toFixed(2);
         tableData.push([symbol, parseFloat(bal).toFixed(4), `$${val}`]);
 
-        const tokensToCheck = [];
-        if (PREDEFINED_TOKENS[currentNetwork]) tokensToCheck.push(...PREDEFINED_TOKENS[currentNetwork]);
-        if (USER_SETTINGS.savedTokens) {
-            tokensToCheck.push(...USER_SETTINGS.savedTokens.filter(t => t.network === currentNetwork));
-        }
-
         const provider = getProvider(currentNetwork);
-        for (const token of tokensToCheck) {
-            try {
-                const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
-                const balWei   = await contract.balanceOf(wallet.wallet.address);
-                const decimals = token.decimals || await contract.decimals();
-                const sym      = token.symbol || await contract.symbol();
-                const balFloat = parseFloat(ethers.formatUnits(balWei, decimals));
-                if (balFloat > 0) {
-                    let valStr = '—';
-                    if (token.coingeckoId) {
-                        const tPrice = await getPrice(token.coingeckoId);
-                        valStr = `$${(balFloat * tPrice).toFixed(2)}`;
-                    }
-                    tableData.push([sym, balFloat.toFixed(4), valStr]);
+        const tokenBalances = await getHeldTokensForWallet(wallet.wallet.address, currentNetwork, provider);
+        for (const token of tokenBalances) {
+            const balFloat = parseFloat(token.balance);
+            let valStr = '—';
+            if (token.coingeckoId) {
+                const tPrice = await getPrice(token.coingeckoId);
+                valStr = `$${(balFloat * tPrice).toFixed(2)}`;
                 }
-            } catch (e) { /* skip token */ }
+            tableData.push([token.symbol, balFloat.toFixed(4), valStr]);
         }
     } catch (e) {
         log(`Balance fetch failed: ${e.message}`, 'error');
@@ -547,18 +610,34 @@ async function showTransferForm() {
     const assets = [`Native (${NETWORKS[currentNetwork]?.currency})`];
     const assetMap = [{ type: 'native' }];
 
-    const tokens = [];
-    if (PREDEFINED_TOKENS[currentNetwork]) tokens.push(...PREDEFINED_TOKENS[currentNetwork]);
-    if (USER_SETTINGS.savedTokens) tokens.push(...USER_SETTINGS.savedTokens.filter(t => t.network === currentNetwork));
+    setLoading('Scanning token balances');
+    const provider = getProvider(currentNetwork);
+    const wallet = DECRYPTED_WALLETS[currentWalletIndex].wallet;
+    const heldTokens = await getHeldTokensForWallet(wallet.address, currentNetwork, provider);
+    closeOverlay();
 
-    tokens.forEach(t => {
-        assets.push(t.symbol);
+    heldTokens.forEach(t => {
+        assets.push(`${t.symbol} (${parseFloat(t.balance)})`);
         assetMap.push({ type: 'token', ...t });
     });
+    assets.push('Find Token by Name');
+    assetMap.push({ type: 'search' });
+    assets.push('Custom Token Address');
+    assetMap.push({ type: 'custom' });
 
     const assetPick = await showListPicker('Select Asset', assets);
     if (!assetPick) return;
-    const asset = assetMap[assetPick.index];
+    let asset = assetMap[assetPick.index];
+    if (asset.type === 'search') {
+        const token = await promptTokenBySearch(currentNetwork);
+        if (!token) return;
+        asset = { type: 'token', ...token };
+    }
+    if (asset.type === 'custom') {
+        const token = await promptTokenByAddress(currentNetwork);
+        if (!token) return;
+        asset = { type: 'token', ...token };
+    }
 
     // 2. Recipient
     const myAddrs = DECRYPTED_WALLETS
@@ -590,8 +669,6 @@ async function showTransferForm() {
 
     setLoading('Broadcasting transaction');
     try {
-        const wallet   = DECRYPTED_WALLETS[currentWalletIndex].wallet;
-        const provider = getProvider(currentNetwork);
         const signer   = wallet.connect(provider);
 
         if (asset.type === 'native') {
@@ -619,15 +696,22 @@ async function showSwapForm() {
     if (DECRYPTED_WALLETS.length === 0) { log('No wallets loaded.', 'warn'); return; }
     if (!ROUTERS[currentNetwork]) { log('Swap not supported on this network.', 'warn'); return; }
 
-    const tokens = [];
-    if (PREDEFINED_TOKENS[currentNetwork]) tokens.push(...PREDEFINED_TOKENS[currentNetwork]);
-    if (USER_SETTINGS.savedTokens) tokens.push(...USER_SETTINGS.savedTokens.filter(t => t.network === currentNetwork));
+    setLoading('Scanning token balances');
+    const provider = getProvider(currentNetwork);
+    const wallet = DECRYPTED_WALLETS[currentWalletIndex].wallet;
+    const tokens = await getHeldTokensForWallet(wallet.address, currentNetwork, provider);
+    closeOverlay();
+    const items = [...tokens.map(t => `${t.symbol} (${parseFloat(t.balance)})`), 'Find Token by Name', 'Custom Token Address'];
 
-    if (tokens.length === 0) { log('No tokens available to swap.', 'warn'); return; }
-
-    const pick = await showListPicker('Token to Sell', tokens.map(t => t.symbol));
+    const pick = await showListPicker('Token to Sell', items);
     if (!pick) return;
-    const token = tokens[pick.index];
+    let token = tokens[pick.index];
+    if (pick.index === tokens.length) {
+        token = await promptTokenBySearch(currentNetwork);
+    } else if (pick.index === tokens.length + 1) {
+        token = await promptTokenByAddress(currentNetwork);
+    }
+    if (!token) return;
 
     const amtData = await promptForm(
         `Swap ${token.symbol} → ${NETWORKS[currentNetwork].currency}`,
@@ -637,8 +721,6 @@ async function showSwapForm() {
 
     setLoading('Fetching swap quote');
     try {
-        const wallet   = DECRYPTED_WALLETS[currentWalletIndex].wallet;
-        const provider = getProvider(currentNetwork);
         const signer   = wallet.connect(provider);
         const amountIn = ethers.parseUnits(amtData.amount, token.decimals);
 
@@ -697,17 +779,11 @@ async function showPortfolio() {
                     }
                 } catch (e) {}
 
-                if (PREDEFINED_TOKENS[netKey]) {
-                    for (const t of PREDEFINED_TOKENS[netKey]) {
-                        try {
-                            const c    = new ethers.Contract(t.address, ERC20_ABI, provider);
-                            const bWei = await c.balanceOf(w.wallet.address);
-                            if (bWei > 0n) {
-                                const b = parseFloat(ethers.formatUnits(bWei, t.decimals));
-                                const p = t.coingeckoId ? await getPrice(t.coingeckoId) : 0;
-                                wTotal += b * p;
-                            }
-                        } catch (e) {}
+                const tokenBalances = await getHeldTokensForWallet(w.wallet.address, netKey, provider);
+                for (const token of tokenBalances) {
+                    if (token.coingeckoId) {
+                        const p = await getPrice(token.coingeckoId);
+                        wTotal += parseFloat(token.balance) * p;
                     }
                 }
             }
@@ -1036,39 +1112,21 @@ async function doShowPrivateKey() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function showTokenManagementMenu() {
-    const items = ['Add Token by Address', 'Remove Saved Token', 'Back'];
+    const items = ['Search Token by Name', 'Add Token by Address', 'Remove Saved Token', 'Back'];
     const pick = await showListPicker('Token Management', items);
     if (!pick || pick.text === 'Back') return;
 
-    if (pick.text === 'Add Token by Address') {
+    if (pick.text === 'Search Token by Name' || pick.text === 'Add Token by Address') {
         const nets = Object.keys(NETWORKS);
         const netPick = await showListPicker('Network', nets.map(k => NETWORKS[k].name));
         if (!netPick) return;
         const netKey = Object.keys(NETWORKS).find(k => NETWORKS[k].name === netPick.value);
 
-        const d = await promptForm('Add Token', [
-            { name: 'addr', label: 'Contract Address' },
-            { name: 'sym',  label: 'Symbol (optional)' }
-        ]);
-        if (!d || !d.addr.trim()) return;
-
-        setLoading('Verifying token');
-        try {
-            const provider = getProvider(netKey);
-            const contract = new ethers.Contract(d.addr.trim(), ERC20_ABI, provider);
-            const symbol   = d.sym.trim() || await contract.symbol();
-            const decimals = await contract.decimals();
-
-            USER_SETTINGS.savedTokens.push({
-                symbol, address: d.addr.trim(), network: netKey,
-                decimals: Number(decimals)
-            });
-            saveSettings({ savedTokens: USER_SETTINGS.savedTokens });
-            log(`Added ${symbol} on ${netKey}.`, 'success');
-        } catch (e) {
-            log(`Token verification failed: ${e.message}`, 'error');
+        if (pick.text === 'Search Token by Name') {
+            await promptTokenBySearch(netKey);
+        } else {
+            await promptTokenByAddress(netKey);
         }
-        closeOverlay();
     }
 
     if (pick.text === 'Remove Saved Token') {

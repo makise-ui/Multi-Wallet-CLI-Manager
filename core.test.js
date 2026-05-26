@@ -12,13 +12,26 @@ vi.mock('./drive.js', () => ({
 }));
 vi.mock('ethers', async (importOriginal) => {
     const actual = await importOriginal();
+    const MockWallet = vi.fn(function (privateKey) {
+        return { privateKey, address: '0xlegacy' };
+    });
+    MockWallet.fromEncryptedJson = vi.fn();
+
     return {
         ...actual,
         ethers: {
             ...actual.ethers,
-            Wallet: {
-                fromEncryptedJson: vi.fn()
-            },
+            Wallet: MockWallet,
+            Contract: vi.fn(function () {
+                return {
+                    symbol: vi.fn(),
+                    decimals: vi.fn(),
+                    balanceOf: vi.fn(),
+                    transfer: vi.fn(),
+                    allowance: vi.fn(),
+                    approve: vi.fn()
+                };
+            }),
             JsonRpcProvider: vi.fn(function () {
                 return {
                     getBalance: vi.fn()
@@ -117,11 +130,14 @@ describe('core.js', () => {
             expect(wallets).toEqual([]);
         });
 
-        it('should throw error if legacy wallets are found', async () => {
+        it('should load legacy plain-text wallets', async () => {
             fs.existsSync.mockReturnValueOnce(true);
             fs.readFileSync.mockReturnValueOnce(JSON.stringify([{ privateKey: '0x123' }]));
 
-            await expect(core.unlockWallets('password')).rejects.toThrow("Legacy plain-text wallets found. Please run CLI to migrate.");
+            const wallets = await core.unlockWallets('password');
+
+            expect(ethers.Wallet).toHaveBeenCalledWith('0x123');
+            expect(wallets).toEqual([{ name: undefined, wallet: { privateKey: '0x123', address: '0xlegacy' } }]);
         });
 
         it('should decrypt wallets successfully', async () => {
@@ -208,6 +224,148 @@ describe('core.js', () => {
             expect(mockProvider.getBalance).toHaveBeenCalledWith('0x123');
             expect(ethers.formatEther).toHaveBeenCalledWith('1000000000000000000');
             expect(balance).toBe('1.0');
+        });
+    });
+
+    describe('token helpers', () => {
+        let originalFetch;
+
+        beforeEach(() => {
+            originalFetch = global.fetch;
+            global.fetch = vi.fn();
+        });
+
+        afterEach(() => {
+            global.fetch = originalFetch;
+        });
+
+        it('should combine predefined and saved tokens for the selected network', () => {
+            core.USER_SETTINGS.savedTokens = [
+                { symbol: 'CAKE', address: '0x111', network: 'bsc', decimals: 18 },
+                { symbol: 'QUICK', address: '0x222', network: 'polygon', decimals: 18 }
+            ];
+
+            const tokens = core.getTokensForNetwork('bsc');
+
+            expect(tokens.map(t => t.symbol)).toEqual(['JMPT', 'USDT', 'CAKE']);
+        });
+
+        it('should update an existing saved token instead of duplicating it', () => {
+            core.USER_SETTINGS.savedTokens = [
+                { symbol: 'OLD', address: '0xAbC', network: 'bsc', decimals: 18 }
+            ];
+
+            const saved = core.saveTokenForNetwork({
+                symbol: 'NEW',
+                address: '0xabc',
+                network: 'bsc',
+                decimals: 9,
+                coingeckoId: 'new-token'
+            });
+
+            expect(saved.symbol).toBe('NEW');
+            expect(core.USER_SETTINGS.savedTokens).toEqual([
+                { symbol: 'NEW', address: '0xabc', network: 'bsc', decimals: 9, coingeckoId: 'new-token' }
+            ]);
+            expect(drive.triggerBackup).toHaveBeenCalled();
+        });
+
+        it('should resolve a CoinGecko coin to a verified network token', async () => {
+            const tokenAddress = '0x1234567890123456789012345678901234567890';
+            global.fetch.mockResolvedValueOnce({
+                json: vi.fn().mockResolvedValueOnce({
+                    id: 'pepe',
+                    platforms: { 'binance-smart-chain': tokenAddress }
+                })
+            });
+            ethers.Contract.mockImplementationOnce(function () {
+                return {
+                    symbol: vi.fn().mockResolvedValueOnce('PEPE'),
+                    decimals: vi.fn().mockResolvedValueOnce(18)
+                };
+            });
+
+            const token = await core.resolveCoinGeckoToken('pepe', 'bsc');
+
+            expect(global.fetch).toHaveBeenCalledWith('https://api.coingecko.com/api/v3/coins/pepe');
+            expect(token).toEqual({
+                symbol: 'PEPE',
+                address: tokenAddress,
+                network: 'bsc',
+                decimals: 18,
+                coingeckoId: 'pepe'
+            });
+        });
+
+        it('should discover token contracts from wallet transfer logs', async () => {
+            const wallet = '0x00000000000000000000000000000000000000aa';
+            const tokenA = '0x00000000000000000000000000000000000000b1';
+            const tokenB = '0x00000000000000000000000000000000000000b2';
+            const provider = {
+                getLogs: vi.fn()
+                    .mockResolvedValueOnce([{ address: tokenA }, { address: tokenA }])
+                    .mockResolvedValueOnce([{ address: tokenB }])
+            };
+
+            const tokens = await core.discoverTokenContractsByTransfers(wallet, 'ethereum', {
+                provider,
+                fromBlock: 10,
+                toBlock: 20
+            });
+
+            expect(provider.getLogs).toHaveBeenCalledTimes(2);
+            expect(tokens).toEqual([
+                ethers.getAddress(tokenA),
+                ethers.getAddress(tokenB)
+            ]);
+        });
+
+        it('should return discovered tokens with positive wallet balances', async () => {
+            const wallet = '0x00000000000000000000000000000000000000aa';
+            const discoveredToken = '0x00000000000000000000000000000000000000b3';
+            const provider = {
+                getLogs: vi.fn()
+                    .mockResolvedValueOnce([{ address: discoveredToken }])
+                    .mockResolvedValueOnce([])
+            };
+
+            ethers.Contract.mockImplementation(function (address) {
+                const normalized = ethers.getAddress(address);
+                if (normalized === ethers.getAddress(discoveredToken)) {
+                    return {
+                        symbol: vi.fn().mockResolvedValue('AUTO'),
+                        decimals: vi.fn().mockResolvedValue(6),
+                        balanceOf: vi.fn().mockResolvedValue(123450000n)
+                    };
+                }
+
+                return {
+                    symbol: vi.fn().mockResolvedValue('ZERO'),
+                    decimals: vi.fn().mockResolvedValue(18),
+                    balanceOf: vi.fn().mockResolvedValue(0n)
+                };
+            });
+
+            const balances = await core.getWalletTokenBalances(wallet, 'ethereum', {
+                provider,
+                fromBlock: 10,
+                toBlock: 20
+            });
+
+            expect(balances).toEqual([expect.objectContaining({
+                symbol: 'AUTO',
+                address: ethers.getAddress(discoveredToken),
+                network: 'ethereum',
+                decimals: 6,
+                balance: '123.45',
+                balanceWei: 123450000n
+            })]);
+            expect(core.USER_SETTINGS.savedTokens).toEqual([{
+                symbol: 'AUTO',
+                address: ethers.getAddress(discoveredToken),
+                network: 'ethereum',
+                decimals: 6
+            }]);
         });
     });
 });

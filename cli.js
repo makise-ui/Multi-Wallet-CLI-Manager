@@ -15,7 +15,6 @@ import {
 } from './recovery.js';
 import {
   NETWORKS,
-  PREDEFINED_TOKENS,
   ERC20_ABI,
   ROUTERS,
   ROUTER_ABI,
@@ -26,7 +25,12 @@ import {
   saveSettings,
   getProvider,
   getNativeBalance,
-  getPrice
+  getPrice,
+  searchCoinGeckoTokens,
+  resolveCoinGeckoToken,
+  readTokenMetadata,
+  saveTokenForNetwork,
+  getWalletTokenBalances
 } from './core.js';
 
 let PROJECT_ID = process.env.PROJECT_ID;
@@ -481,91 +485,11 @@ async function manageTokens() {
             { type: 'rawlist', name: 'mode', message: 'How to find token?', choices: ['Search by Name (CoinGecko)', 'Enter Contract Address'] }
         ]);
 
-        let address = null;
-        let coingeckoId = null;
+        const token = method.mode.startsWith('Enter')
+            ? await promptTokenByAddress(networkKey)
+            : await promptTokenBySearch(networkKey);
 
-        if (method.mode.startsWith('Enter')) {
-            const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Token Contract Address:' }]);
-            address = input.addr.trim();
-        } else {
-            // Search Logic
-            const query = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Enter Token Name (e.g. Pepe):' }]);
-            console.log("🔍 Searching CoinGecko...");
-            
-            try {
-                const res = await fetch(`https://api.coingecko.com/api/v3/search?query=${query.q}`);
-                const data = await res.json();
-                
-                if (!data.coins || data.coins.length === 0) {
-                    console.log("❌ No coins found.");
-                    return;
-                }
-
-                const choices = data.coins.slice(0, 10).map(c => ({
-                    name: `${c.name} (${c.symbol}) - Rank #${c.market_cap_rank || 'N/A'}`,
-                    value: c.id
-                }));
-
-                const coinChoice = await inquirer.prompt([
-                    { type: 'rawlist', name: 'id', message: 'Select Coin:', choices: choices }
-                ]);
-
-                console.log("⏳ Fetching contract details...");
-                const detailRes = await fetch(`https://api.coingecko.com/api/v3/coins/${coinChoice.id}`);
-                const detail = await detailRes.json();
-
-                // Map our network keys to CoinGecko platform keys
-                const platformMap = {
-                    'ethereum': 'ethereum',
-                    'bsc': 'binance-smart-chain',
-                    'polygon': 'polygon-pos',
-                    'celo': 'celo'
-                };
-
-                const platformKey = platformMap[networkKey];
-                address = detail.platforms[platformKey];
-                coingeckoId = detail.id;
-
-                console.log("DEBUG: Platforms in response:", Object.keys(detail.platforms));
-
-                if (!address) {
-                    console.log(`❌ This token does not have a contract on ${NETWORKS[networkKey].name}.`);
-                    console.log(`   Available on: ${Object.keys(detail.platforms).join(', ')}`);
-                    return;
-                }
-                console.log(`✅ Found Address: ${address}`);
-
-            } catch (e) {
-                console.log(`❌ Search failed: ${e.message}`);
-                return;
-            }
-        }
-
-        // 3. Fetch Details & Save
-        try {
-            console.log("⏳ Verifying on-chain...");
-            const provider = getProvider(networkKey);
-            const contract = new ethers.Contract(address, ERC20_ABI, provider);
-            const symbol = await contract.symbol();
-            const decimals = await contract.decimals();
-
-            console.log(`✅ Verified ${symbol} (Decimals: ${decimals})`);
-            
-            const confirm = await inquirer.prompt([{ type: 'confirm', name: 'save', message: 'Save this token?', default: true }]);
-            if (confirm.save) {
-                USER_SETTINGS.savedTokens.push({ 
-                    symbol, 
-                    address, 
-                    network: networkKey, 
-                    decimals: Number(decimals),
-                    coingeckoId: coingeckoId // Store ID for price data!
-                });
-                saveSettings({ savedTokens: USER_SETTINGS.savedTokens });
-                console.log("💾 Token Saved!");
-            }
-        } catch (e) {
-            console.log(`❌ Could not fetch token info: ${e.message}`);
-        }
+        if (token) console.log(`💾 ${token.symbol} is ready for transfers and swaps.`);
     } else if (action.do === 'Remove Token') {
         if (USER_SETTINGS.savedTokens.length === 0) {
             console.log("No saved tokens.");
@@ -585,6 +509,65 @@ async function manageTokens() {
     
     // Loop back
     await manageTokens();
+}
+
+function formatTokenSearchResult(token) {
+    return `${token.name} (${String(token.symbol).toUpperCase()}) - Rank #${token.marketCapRank || 'N/A'}`;
+}
+
+async function promptTokenBySearch(networkKey) {
+    const query = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Search Token Name or Symbol:' }]);
+    if (!query.q.trim()) return null;
+
+    console.log("🔍 Searching CoinGecko...");
+    try {
+        const results = await searchCoinGeckoTokens(query.q);
+        if (results.length === 0) {
+            console.log("❌ No coins found.");
+            return null;
+        }
+
+        const coinChoice = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'id',
+            message: `Select Token on ${NETWORKS[networkKey].name}:`,
+            choices: results.map(token => ({ name: formatTokenSearchResult(token), value: token.id }))
+        }]);
+
+        console.log("⏳ Resolving contract and verifying on-chain...");
+        const token = await resolveCoinGeckoToken(coinChoice.id, networkKey);
+        const saved = saveTokenForNetwork(token);
+        console.log(`✅ ${saved.symbol} found at ${saved.address}`);
+        return saved;
+    } catch (e) {
+        console.log(`❌ Token search failed: ${e.message}`);
+        return null;
+    }
+}
+
+async function promptTokenByAddress(networkKey) {
+    const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Token Contract Address:' }]);
+    if (!input.addr.trim()) return null;
+
+    try {
+        console.log("⏳ Verifying token on-chain...");
+        const token = await readTokenMetadata(input.addr, networkKey);
+        const saved = saveTokenForNetwork(token);
+        console.log(`✅ ${saved.symbol} verified and saved.`);
+        return saved;
+    } catch (e) {
+        console.log(`❌ Could not verify token: ${e.message}`);
+        return null;
+    }
+}
+
+async function getHeldTokensForWallet(walletAddress, networkKey, provider) {
+    try {
+        return await getWalletTokenBalances(walletAddress, networkKey, { provider });
+    } catch (e) {
+        console.log(`⚠️ Token balance discovery failed: ${e.message}`);
+        return [];
+    }
 }
 
 async function changeSettings() {
@@ -1160,48 +1143,23 @@ async function checkBalance() {
   console.log(`
 💰 Native: ${nativeBalance} ${network.currency} (≈ ${nativeValue} ${USER_SETTINGS.currency})`);
 
-  // 2. Check Tokens (Predefined + Saved)
-  // networkKey already determined above
-
-  // Build list of tokens to check
-  const tokensToCheck = [];
-  
-  // Add Predefined Tokens
-  if (PREDEFINED_TOKENS[networkKey]) {
-      tokensToCheck.push(...PREDEFINED_TOKENS[networkKey]);
-  }
-
-  // Add user saved tokens for this network
-  if (USER_SETTINGS.savedTokens) {
-      const saved = USER_SETTINGS.savedTokens.filter(t => t.network === networkKey);
-      tokensToCheck.push(...saved);
-  }
-
-  if (tokensToCheck.length > 0) {
-      console.log("\n💎 Checking Tokens:");
-      for (const token of tokensToCheck) {
-          try {
-              const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
-              const balanceWei = await contract.balanceOf(selectedWalletData.address);
-              // Use saved decimals if available, else fetch
-              const decimals = token.decimals || await contract.decimals();
-              const symbol = token.symbol || await contract.symbol();
-              
-              const bal = parseFloat(ethers.formatUnits(balanceWei, decimals));
-              
-              // Only fetch price if coingeckoId is known
-              let valStr = "";
-              if (token.coingeckoId) {
-                  const price = await getPrice(token.coingeckoId);
-                  const val = (bal * price).toFixed(2);
-                  valStr = `(≈ ${val} ${USER_SETTINGS.currency})`;
-              }
-
-              console.log(`   - ${bal} ${symbol} ${valStr}`);
-          } catch (e) {
-              // console.log(`   - ${token.symbol}: Error fetching balance`);
+  console.log("🔎 Discovering token balances...");
+  const tokenBalances = await getHeldTokensForWallet(selectedWalletData.address, networkKey, provider);
+  if (tokenBalances.length > 0) {
+      console.log("\n💎 Token Balances:");
+      for (const token of tokenBalances) {
+          const bal = parseFloat(token.balance);
+          let valStr = "";
+          if (token.coingeckoId) {
+              const price = await getPrice(token.coingeckoId);
+              const val = (bal * price).toFixed(2);
+              valStr = `(≈ ${val} ${USER_SETTINGS.currency})`;
           }
+
+          console.log(`   - ${bal} ${token.symbol} ${valStr}`);
       }
+  } else {
+      console.log("\n💎 No token balances found on this network.");
   }
 }
 
@@ -1238,20 +1196,11 @@ async function checkPortfolio() {
                     walletTotal += val;
                 }
                 
-                // Scan Tokens
-                if (PREDEFINED_TOKENS[netKey]) {
-                    for (const t of PREDEFINED_TOKENS[netKey]) {
-                        try {
-                            const contract = new ethers.Contract(t.address, ERC20_ABI, provider);
-                            const tBalWei = await contract.balanceOf(w.address);
-                            if (tBalWei > 0n) {
-                                const tBal = parseFloat(ethers.formatUnits(tBalWei, t.decimals));
-                                if (t.coingeckoId) {
-                                    const tPrice = await getPrice(t.coingeckoId);
-                                    walletTotal += tBal * tPrice;
-                                }
-                            }
-                        } catch(e) {}
+                const tokenBalances = await getHeldTokensForWallet(w.address, netKey, provider);
+                for (const token of tokenBalances) {
+                    if (token.coingeckoId) {
+                        const tPrice = await getPrice(token.coingeckoId);
+                        walletTotal += parseFloat(token.balance) * tPrice;
                     }
                 }
             } catch (e) {
@@ -1306,12 +1255,13 @@ async function transferAsset() {
         { name: `Native Coin (${network.currency})`, value: 'native' }
     ];
 
-    if (PREDEFINED_TOKENS[networkKey]) {
-        PREDEFINED_TOKENS[networkKey].forEach(t => {
-            assetOptions.push({ name: `${t.symbol} Token`, value: t });
-        });
-    }
+    console.log("🔎 Scanning token balances...");
+    const heldTokens = await getHeldTokensForWallet(senderWalletData.wallet.address, networkKey, provider);
+    heldTokens.forEach(t => {
+        assetOptions.push({ name: `${t.symbol} Token (${parseFloat(t.balance)})`, value: t });
+    });
 
+    assetOptions.push({ name: 'Find Token by Name', value: 'search' });
     assetOptions.push({ name: 'Custom Token Address', value: 'custom' });
     assetOptions.push({ name: '🔙 Back', value: 'BACK' });
 
@@ -1329,28 +1279,30 @@ async function transferAsset() {
     let tokenAddress = null;
     let decimals = 18;
     let symbol = network.currency;
+    let coingeckoId = network.coingeckoId;
 
     if (assetChoice.type === 'native') {
         // do nothing, default
+    } else if (assetChoice.type === 'search') {
+        const token = await promptTokenBySearch(networkKey);
+        if (!token) return;
+        tokenAddress = token.address;
+        decimals = token.decimals;
+        symbol = token.symbol;
+        coingeckoId = token.coingeckoId;
     } else if (assetChoice.type === 'custom') {
-        const addrInput = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Enter Token Contract Address:' }]);
-        tokenAddress = addrInput.addr;
+        const token = await promptTokenByAddress(networkKey);
+        if (!token) return;
+        tokenAddress = token.address;
+        decimals = token.decimals;
+        symbol = token.symbol;
+        coingeckoId = token.coingeckoId;
     } else {
         // Predefined token object
         tokenAddress = assetChoice.type.address;
         decimals = assetChoice.type.decimals;
         symbol = assetChoice.type.symbol;
-    }
-
-    if (tokenAddress && assetChoice.type === 'custom') {
-        try {
-            const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-            decimals = await contract.decimals();
-            symbol = await contract.symbol();
-        } catch (e) {
-            console.log("❌ Invalid token address or network error.");
-            return;
-        }
+        coingeckoId = assetChoice.type.coingeckoId;
     }
 
     // 4. Recipient
@@ -1406,17 +1358,13 @@ async function transferAsset() {
         // Need price.
         // For Native: network.coingeckoId
         // For Token: assetChoice.type.coingeckoId (if preset) or unknown
-        let geckoId = null;
-        if (assetChoice.type === 'native') geckoId = network.coingeckoId;
-        else if (assetChoice.type.coingeckoId) geckoId = assetChoice.type.coingeckoId;
-
-        if (!geckoId) {
+        if (!coingeckoId) {
             console.log("❌ Price data not available for this asset.");
             return;
         }
 
         const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter ${USER_SETTINGS.currency} Amount:` }]);
-        const price = await getPrice(geckoId);
+        const price = await getPrice(coingeckoId);
         if (price === 0) { console.log("❌ Price fetch failed."); return; }
         
         const usdVal = parseFloat(input.val);
@@ -1489,14 +1437,10 @@ async function swapToken() {
     const connectedSigner = signer.connect(provider);
 
     // 3. Select Token
-    const tokenOptions = [];
-    if (PREDEFINED_TOKENS[networkKey]) {
-        PREDEFINED_TOKENS[networkKey].forEach(t => tokenOptions.push({ name: t.symbol, value: t }));
-    }
-    // Add saved tokens
-    if (USER_SETTINGS.savedTokens) {
-        USER_SETTINGS.savedTokens.filter(t => t.network === networkKey).forEach(t => tokenOptions.push({ name: t.symbol, value: t }));
-    }
+    console.log("🔎 Scanning token balances...");
+    const heldTokens = await getHeldTokensForWallet(selectedWalletData.wallet.address, networkKey, provider);
+    const tokenOptions = heldTokens.map(t => ({ name: `${t.symbol} (${parseFloat(t.balance)})`, value: t }));
+    tokenOptions.push({ name: 'Find Token by Name', value: 'search' });
     tokenOptions.push({ name: 'Custom Address', value: 'custom' });
     tokenOptions.push({ name: '🔙 Back', value: 'BACK' });
 
@@ -1504,16 +1448,13 @@ async function swapToken() {
     if (tokenChoice.token === 'BACK') return;
 
     let tokenData = tokenChoice.token;
+    if (tokenChoice.token === 'search') {
+        tokenData = await promptTokenBySearch(networkKey);
+        if (!tokenData) return;
+    }
     if (tokenChoice.token === 'custom') {
-        const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Contract Address:' }]);
-        try {
-            const c = new ethers.Contract(input.addr, ERC20_ABI, provider);
-            tokenData = { 
-                address: input.addr, 
-                symbol: await c.symbol(), 
-                decimals: await c.decimals() 
-            };
-        } catch(e) { console.log("Invalid Token"); return; }
+        tokenData = await promptTokenByAddress(networkKey);
+        if (!tokenData) return;
     }
 
     // 4. Amount
