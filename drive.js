@@ -3,10 +3,10 @@ import path from 'path';
 import os from 'os';
 import { google } from 'googleapis';
 import inquirer from 'inquirer';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import util from 'util';
 
-const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
 const TOKEN_PATH = path.join(CONFIG_DIR, 'gdrive_token.json');
@@ -19,7 +19,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 async function checkRclone() {
     try {
-        await execPromise('rclone version');
+        await execFilePromise('rclone', ['version']);
         return true;
     } catch (e) {
         return false;
@@ -28,7 +28,7 @@ async function checkRclone() {
 
 async function getRcloneRemotes() {
     try {
-        const { stdout } = await execPromise('rclone listremotes');
+        const { stdout } = await execFilePromise('rclone', ['listremotes']);
         return stdout.split('\n').filter(r => r.trim() !== '').map(r => r.replace(':', ''));
     } catch (e) {
         return [];
@@ -72,7 +72,7 @@ async function backupWithRclone(remoteName) {
         for (const file of files) {
             const filePath = path.join(CONFIG_DIR, file);
             if (fs.existsSync(filePath)) {
-                await execPromise(`rclone copy "${filePath}" "${dest}"`);
+                await execFilePromise('rclone', ['copy', filePath, dest]);
             }
         }
         console.log("✅ Backup complete.");
