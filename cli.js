@@ -5,8 +5,39 @@ import { ethers } from 'ethers';
 import { SignClient } from "@walletconnect/sign-client";
 import os from 'os';
 import path from 'path';
-import 'dotenv/config'; // Load .env
-import { setupDrive, setupRclone, triggerBackup } from './drive.js';
+import { 
+    setupDrive, 
+    setupRclone, 
+    triggerBackup, 
+    checkCloudBackupAvailable, 
+    restoreFromCloud, 
+    getRcloneRemotes 
+} from './drive.js';
+import { 
+    getAllChains, 
+    getPopularChains, 
+    getChain, 
+    searchChains, 
+    testRpcLatency, 
+    getWorkingProvider,
+    getProvider 
+} from './chains.js';
+import { 
+    getTokensForChain, 
+    getQuote, 
+    executeQuote, 
+    checkTransferStatus 
+} from './swapBridge.js';
+import { 
+    scanPortfolio,
+    COMMON_TOKENS_BY_CHAIN 
+} from './portfolio.js';
+import {
+    NETWORKS as CORE_NETWORKS,
+    getPublicWallets,
+    getPrice as getPriceCore,
+    getFiatRate
+} from './core.js';
 
 let PROJECT_ID = process.env.PROJECT_ID;
 const CONFIG_DIR = path.join(os.homedir(), '.my-cli-wallet');
@@ -451,13 +482,8 @@ function saveSettings() {
     triggerBackup(USER_SETTINGS);
 }
 
-// Supported Networks
-const NETWORKS = {
-    "ethereum": { name: "Ethereum Mainnet", rpc: "https://eth.llamarpc.com", chainId: 1, currency: "ETH", coingeckoId: "ethereum" },
-    "bsc": { name: "Binance Smart Chain", rpc: "https://bsc-dataseed.binance.org", chainId: 56, currency: "BNB", coingeckoId: "binancecoin" },
-    "polygon": { name: "Polygon (Matic)", rpc: "https://polygon-rpc.com", chainId: 137, currency: "POL", coingeckoId: "matic-network" },
-    "celo": { name: "Celo Mainnet", rpc: "https://forno.celo.org", chainId: 42220, currency: "CELO", coingeckoId: "celo" }
-};
+// Supported Networks (260+ EVM Chains)
+const NETWORKS = CORE_NETWORKS;
 
 // Common Token Addresses
 const PREDEFINED_TOKENS = {
@@ -629,6 +655,7 @@ async function changeSettings() {
                 'Gas Limit Buffer (Advanced)',
                 'Manage Custom Tokens',
                 'Backup Configuration',
+                'Restore Vault from Cloud Backup (Google Drive / Rclone)',
                 'Restore Deleted Wallet',
                 'Toggle Vault Encryption',
                 'Back'
@@ -637,6 +664,11 @@ async function changeSettings() {
     ]);
 
     if (action.setting === 'Back') return;
+
+    if (action.setting === 'Restore Vault from Cloud Backup (Google Drive / Rclone)') {
+        await handleCloudRestoreInteractive();
+        return;
+    }
     
     if (action.setting === 'Toggle Vault Encryption') {
         await toggleEncryption();
@@ -837,7 +869,31 @@ function loadWalletsRaw() {
 }
 
 async function initializeWallets() {
-    const rawWallets = loadWalletsRaw();
+    let rawWallets = loadWalletsRaw();
+    if (rawWallets.length === 0) {
+        try {
+            const cloud = await checkCloudBackupAvailable(USER_SETTINGS);
+            if (cloud.available) {
+                console.log(`\n☁️  Cloud backup detected on ${cloud.method === 'rclone' ? `Rclone ('${cloud.remote}')` : 'Google Drive'}!`);
+                const answer = await inquirer.prompt([{
+                    type: 'confirm',
+                    name: 'restore',
+                    message: 'No local wallets found. Would you like to restore your vault from cloud backup?',
+                    default: true
+                }]);
+                if (answer.restore) {
+                    const res = await restoreFromCloud(USER_SETTINGS, { remote: cloud.remote, method: cloud.method });
+                    if (res.success) {
+                        console.log(`✅ Restored ${res.count} wallet(s) from cloud backup: ${(res.wallets || []).join(', ')}`);
+                        loadPublicWallets();
+                        rawWallets = loadWalletsRaw();
+                    } else {
+                        console.log(`⚠️  Cloud restore failed: ${res.error}`);
+                    }
+                }
+            }
+        } catch (e) {}
+    }
     if (rawWallets.length === 0) return;
 
     // Check if wallets are unencrypted (contain 'privateKey')
@@ -982,14 +1038,80 @@ async function createNewWallet() {
   console.log(`🔑 Address: ${wallet.address}`);
 }
 
+async function handleCloudRestoreInteractive() {
+    console.log("\n☁️  Cloud Vault Restore (Google Drive / Rclone)");
+    const status = await checkCloudBackupAvailable(USER_SETTINGS);
+    
+    let method = USER_SETTINGS.backupMethod || 'rclone';
+    let remote = USER_SETTINGS.rcloneRemote;
+
+    if (status.available) {
+        method = status.method;
+        if (status.remote) remote = status.remote;
+        console.log(`✅ Cloud backup detected on ${method === 'rclone' ? `Rclone remote '${remote}'` : 'Google Drive Native API'}.`);
+    } else {
+        const choice = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'm',
+            message: 'No automatic backup detected. How would you like to restore?',
+            choices: ['Rclone Remote', 'Google Drive Native API', 'Cancel']
+        }]);
+        if (choice.m === 'Cancel') return;
+        if (choice.m.startsWith('Rclone')) {
+            method = 'rclone';
+            const remotes = await getRcloneRemotes();
+            if (remotes.length === 0) {
+                console.log("❌ No Rclone remotes configured. Run 'rclone config' in terminal.");
+                return;
+            }
+            const rAnswer = await inquirer.prompt([{
+                type: 'rawlist',
+                name: 'r',
+                message: 'Select Rclone remote to restore from:',
+                choices: remotes
+            }]);
+            remote = rAnswer.r;
+        } else {
+            method = 'gapi';
+        }
+    }
+
+    const currentWallets = loadWalletsRaw();
+    let merge = false;
+    if (currentWallets.length > 0) {
+        const strategy = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'mode',
+            message: `You currently have ${currentWallets.length} local wallet(s). How would you like to restore?`,
+            choices: [
+                'Merge (Add any missing wallets from cloud, preserve local wallets)',
+                'Replace (Overwrite local vault completely with cloud backup)',
+                'Cancel'
+            ]
+        }]);
+        if (strategy.mode === 'Cancel') return;
+        merge = strategy.mode.startsWith('Merge');
+    }
+
+    console.log(`\n⏳ Restoring vault from cloud (${method === 'rclone' ? remote : 'Google Drive'})...`);
+    const res = await restoreFromCloud(USER_SETTINGS, { method, remote, merge, restoreSettings: true });
+    if (res.success) {
+        console.log(`✅ Restore successful! Vault now contains ${res.count} wallet(s):`);
+        if (res.wallets) {
+            res.wallets.forEach(name => console.log(`   🔑 ${name}`));
+        }
+        loadPublicWallets();
+        DECRYPTED_WALLETS = [];
+        SESSION_PASSWORD = null;
+        console.log("💡 Wallets are ready in your local vault.\n");
+    } else {
+        console.log(`❌ Restore failed: ${res.error}\n`);
+    }
+}
+
 async function importWallet() {
     await ensureEncryptionPreference();
-    console.log("Importing existing wallet...");
-    
-    // Ensure we have a password set/active before importing (if not disabled)
-    if (!USER_SETTINGS.encryptionDisabled) {
-        await getPassword();
-    }
+    console.log("Importing wallet...");
 
     const method = await inquirer.prompt([
         {
@@ -998,10 +1120,21 @@ async function importWallet() {
             message: 'Import method:',
             choices: [
                 { name: 'Private Key', value: 'pk' },
-                { name: 'Mnemonic Phrase (12/24 words)', value: 'mnemonic' }
+                { name: 'Mnemonic Phrase (12/24 words)', value: 'mnemonic' },
+                { name: '☁️  Restore from Cloud Backup (Google Drive / Rclone)', value: 'cloud' }
             ]
         }
     ]);
+
+    if (method.type === 'cloud') {
+        await handleCloudRestoreInteractive();
+        return;
+    }
+
+    // Ensure we have a password set/active before importing (if not disabled)
+    if (!USER_SETTINGS.encryptionDisabled) {
+        await getPassword();
+    }
 
     let wallet;
     try {
@@ -1077,46 +1210,91 @@ async function renameWallet() {
 }
 
 async function listWallets() {
-  if (DECRYPTED_WALLETS.length === 0) {
-    console.log("No wallets unlocked. Create one first!");
+  if (DECRYPTED_WALLETS.length > 0) {
+    return DECRYPTED_WALLETS.map(w => ({ name: w.name, address: w.address || w.wallet.address }));
+  }
+  const publicList = getPublicWallets();
+  if (publicList.length === 0) {
+    console.log("No wallets found. Create one first!");
     return [];
   }
-  return DECRYPTED_WALLETS.map(w => ({ name: w.name, address: w.wallet.address }));
+  return publicList.map(w => ({ name: w.name, address: w.address }));
 }
 
 // --- Blockchain Actions ---
 
 async function selectNetwork(includeBack = false) {
-  const choices = Object.keys(NETWORKS).map(key => ({ 
-      name: NETWORKS[key].name, 
-      value: key 
+  const popular = getPopularChains();
+  const choices = popular.map(c => ({ 
+      name: `${c.name} (${c.currency} - ID ${c.chainId})`, 
+      value: c 
   }));
+  
+  choices.push(new inquirer.Separator('--- Chain Directory (260+ Chains) ---'));
+  choices.push({ name: '🔍 Search All 260+ EVM Chains', value: 'SEARCH' });
+  choices.push({ name: '📋 Browse All Chains', value: 'ALL' });
   
   if (includeBack) {
       choices.push({ name: '🔙 Back', value: 'BACK' });
   }
-  
-  // Move default network to top or just pre-select it? Inquirer rawlist doesn't support 'default' index easily
-  // But we can inform the user
-  const defaultNet = USER_SETTINGS.defaultNetwork || 'ethereum';
-  const defaultIndex = choices.findIndex(c => c.value === defaultNet);
-  
-  // Create a human readable prompt
-  const msg = `Select Network (Default: ${defaultIndex + 1} - ${NETWORKS[defaultNet].name}):`;
 
   const answer = await inquirer.prompt([
       {
           type: 'rawlist',
-          name: 'network',
-          message: msg,
-          choices: choices,
-          default: defaultIndex 
+          name: 'selected',
+          message: 'Select Network:',
+          choices: choices
       }
   ]);
   
-  if (answer.network === 'BACK') return 'BACK';
-  return NETWORKS[answer.network];
+  if (answer.selected === 'BACK') return 'BACK';
+  
+  if (answer.selected === 'SEARCH') {
+      const qInput = await inquirer.prompt([{
+          type: 'input',
+          name: 'q',
+          message: 'Enter Chain Name, Symbol, or Chain ID (e.g. Base, Arbitrum, 8453):'
+      }]);
+      const matches = searchChains(qInput.q);
+      if (matches.length === 0) {
+          console.log("❌ No matching chains found.");
+          return await selectNetwork(includeBack);
+      }
+      const matchChoices = matches.slice(0, 30).map(c => ({
+          name: `${c.name} (${c.currency} - ID ${c.chainId})`,
+          value: c
+      }));
+      matchChoices.push({ name: '🔙 Back', value: 'BACK' });
+      const sub = await inquirer.prompt([{
+          type: 'rawlist',
+          name: 'c',
+          message: `Select matching chain (${matches.length} found):`,
+          choices: matchChoices
+      }]);
+      if (sub.c === 'BACK') return await selectNetwork(includeBack);
+      return sub.c;
+  }
+  
+  if (answer.selected === 'ALL') {
+      const all = getAllChains();
+      const allChoices = all.slice(0, 50).map(c => ({
+          name: `${c.name} (${c.currency} - ID ${c.chainId})`,
+          value: c
+      }));
+      allChoices.push({ name: '🔙 Back', value: 'BACK' });
+      const sub = await inquirer.prompt([{
+          type: 'rawlist',
+          name: 'c',
+          message: 'Select Chain (Top 50 shown, or use Search):',
+          choices: allChoices
+      }]);
+      if (sub.c === 'BACK') return await selectNetwork(includeBack);
+      return sub.c;
+  }
+
+  return answer.selected;
 }
+
 async function checkBalance() {
   const wallets = await listWallets();
   if (wallets.length === 0) return;
@@ -1140,59 +1318,186 @@ async function checkBalance() {
   const network = await selectNetwork(true); // true = include back option
   if (network === 'BACK') return;
 
-  const provider = new ethers.JsonRpcProvider(network.rpc);
-
-  console.log(`⏳ Fetching balances on ${network.name}...`);
-  
-  const nativeBalanceWei = await provider.getBalance(selectedWalletData.address);
-  const nativeBalance = parseFloat(ethers.formatEther(nativeBalanceWei));
-  const nativePrice = await getPrice(network.coingeckoId);
-  const nativeValue = (nativeBalance * nativePrice).toFixed(2);
-  
-  console.log(`
-💰 Native: ${nativeBalance} ${network.currency} (≈ ${nativeValue} ${USER_SETTINGS.currency})`);
-
-  // 2. Check Tokens (Predefined + Saved)
-  const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
-  
-  // Build list of tokens to check
-  const tokensToCheck = [];
-  
-  // Add Predefined Tokens
-  if (PREDEFINED_TOKENS[networkKey]) {
-      tokensToCheck.push(...PREDEFINED_TOKENS[networkKey]);
+  let provider;
+  try {
+      provider = await getWorkingProvider(network.chainId);
+  } catch (e) {
+      provider = getProvider(network.chainId);
   }
 
-  // Add user saved tokens for this network
-  if (USER_SETTINGS.savedTokens) {
-      const saved = USER_SETTINGS.savedTokens.filter(t => t.network === networkKey);
-      tokensToCheck.push(...saved);
+  console.log(`\n⏳ Fetching balances on ${network.name} (Chain ID: ${network.chainId})...`);
+  
+  // 1. Native balance & live price
+  let nativeBalance = 0;
+  try {
+      const nativeBalanceWei = await provider.getBalance(selectedWalletData.address);
+      nativeBalance = parseFloat(ethers.formatEther(nativeBalanceWei));
+  } catch (e) {
+      console.log(`⚠️  Could not fetch native balance: ${e.message}`);
   }
 
-  if (tokensToCheck.length > 0) {
-      console.log("\n💎 Checking Tokens:");
-      for (const token of tokensToCheck) {
-          try {
-              const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
-              const balanceWei = await contract.balanceOf(selectedWalletData.address);
-              // Use saved decimals if available, else fetch
-              const decimals = token.decimals || await contract.decimals();
-              const symbol = token.symbol || await contract.symbol();
-              
-              const bal = parseFloat(ethers.formatUnits(balanceWei, decimals));
-              
-              // Only fetch price if coingeckoId is known
-              let valStr = "";
-              if (token.coingeckoId) {
-                  const price = await getPrice(token.coingeckoId);
-                  const val = (bal * price).toFixed(2);
-                  valStr = `(≈ ${val} ${USER_SETTINGS.currency})`;
-              }
+  let nativeValue = "0.00";
+  try {
+      const nativePrice = await getPriceCore(network.currency, USER_SETTINGS.currency);
+      nativeValue = (nativeBalance * nativePrice).toFixed(2);
+  } catch (e) {}
+  
+  console.log(`\n💰 Native: ${nativeBalance} ${network.currency} (≈ ${nativeValue} ${USER_SETTINGS.currency})`);
 
-              console.log(`   - ${bal} ${symbol} ${valStr}`);
-          } catch (e) {
-              // console.log(`   - ${token.symbol}: Error fetching balance`);
+  // 2. Discover & check all tokens on this chain dynamically (zero hardcoding)
+  const chainId = Number(network.chainId);
+  const candidateTokens = [];
+  const seenAddresses = new Set();
+
+  const addToken = (t) => {
+      if (!t || !t.address) return;
+      try {
+          const raw = t.address.toLowerCase();
+          if (raw === '0x0000000000000000000000000000000000000000') return;
+          const checkAddr = ethers.getAddress(raw);
+          if (!seenAddresses.has(raw)) {
+              seenAddresses.add(raw);
+              candidateTokens.push({
+                  address: checkAddr,
+                  symbol: t.symbol || 'TOKEN',
+                  decimals: t.decimals != null ? Number(t.decimals) : 18,
+                  name: t.name || t.symbol || 'Token',
+                  coingeckoId: t.coingeckoId || null,
+                  priceUSD: t.priceUSD != null ? parseFloat(t.priceUSD) : null
+              });
           }
+      } catch (e) {}
+  };
+
+  process.stdout.write(`📡 Auto-discovering verified tokens for ${network.name}... `);
+  try {
+      const dynamicTokens = await getTokensForChain(chainId);
+      if (Array.isArray(dynamicTokens)) {
+          dynamicTokens.forEach(addToken);
+      }
+      process.stdout.write(`(${candidateTokens.length} tokens found)\n`);
+  } catch (e) {
+      process.stdout.write(`(using local token catalog)\n`);
+  }
+
+  // Add curated common tokens for this chain (fallback / supplement)
+  if (COMMON_TOKENS_BY_CHAIN[chainId]) {
+      COMMON_TOKENS_BY_CHAIN[chainId].forEach(addToken);
+  }
+
+  // Add legacy predefined tokens
+  if (network.key && PREDEFINED_TOKENS[network.key]) {
+      PREDEFINED_TOKENS[network.key].forEach(addToken);
+  }
+
+  // Add user saved custom tokens for this network
+  if (USER_SETTINGS.savedTokens) {
+      USER_SETTINGS.savedTokens
+          .filter(t => t.network === network.key || t.network === String(chainId) || t.chainId === chainId)
+          .forEach(addToken);
+  }
+
+  if (candidateTokens.length > 0) {
+      console.log(`🔎 Checking ${candidateTokens.length} tokens on ${network.name} via Multicall3...`);
+      
+      const foundTokens = [];
+      const multicall3Addr = network.multicall3 || "0xca11bde05977b3631167028862be2a173976ca11";
+      let usedMulticall = false;
+
+      try {
+          const mc3Abi = ["function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"];
+          const erc20 = new ethers.Interface(["function balanceOf(address) view returns (uint256)"]);
+          const mc3 = new ethers.Contract(multicall3Addr, mc3Abi, provider);
+
+          const CHUNK_SIZE = 250;
+          const chunks = [];
+          for (let i = 0; i < candidateTokens.length; i += CHUNK_SIZE) {
+              chunks.push(candidateTokens.slice(i, i + CHUNK_SIZE));
+          }
+
+          await Promise.all(chunks.map(async (chunk) => {
+              const calls = chunk.map(t => ({
+                  target: t.address,
+                  allowFailure: true,
+                  callData: erc20.encodeFunctionData("balanceOf", [selectedWalletData.address])
+              }));
+
+              try {
+                  const results = await Promise.race([
+                      mc3.aggregate3(calls),
+                      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+                  ]);
+
+                  results.forEach((r, idx) => {
+                      if (r.success && r.returnData && r.returnData !== '0x') {
+                          const balWei = BigInt(r.returnData);
+                          if (balWei > 0n) {
+                              const token = chunk[idx];
+                              const formatted = ethers.formatUnits(balWei, token.decimals);
+                              if (parseFloat(formatted) > 0.000001) {
+                                  foundTokens.push({ ...token, balance: formatted, balanceRaw: balWei.toString() });
+                              }
+                          }
+                      }
+                  });
+              } catch (err) {}
+          }));
+          usedMulticall = true;
+      } catch (e) {}
+
+      if (!usedMulticall || (foundTokens.length === 0 && candidateTokens.length > 0 && !usedMulticall)) {
+          // Parallel fallback for top tokens
+          const fallbackTokens = candidateTokens.slice(0, 30);
+          for (let i = 0; i < fallbackTokens.length; i += 5) {
+              const batch = fallbackTokens.slice(i, i + 5);
+              await Promise.all(batch.map(async (token) => {
+                  try {
+                      const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
+                      const balWei = await contract.balanceOf(selectedWalletData.address);
+                      if (balWei > 0n) {
+                          const formatted = ethers.formatUnits(balWei, token.decimals);
+                          if (parseFloat(formatted) > 0.000001) {
+                              foundTokens.push({ ...token, balance: formatted });
+                          }
+                      }
+                  } catch (err) {}
+              }));
+          }
+      }
+
+      if (foundTokens.length > 0) {
+          // Calculate fiat values
+          let fiatRate = 1;
+          try {
+              fiatRate = await getFiatRate(USER_SETTINGS.currency);
+          } catch (e) {}
+
+          for (const t of foundTokens) {
+              if (t.priceUSD) {
+                  t.fiatPrice = t.priceUSD * fiatRate;
+                  t.fiatValue = parseFloat(t.balance) * t.fiatPrice;
+              }
+          }
+          foundTokens.sort((a, b) => (b.fiatValue || 0) - (a.fiatValue || 0));
+
+          console.log(`\n💎 Tokens with Balance (${foundTokens.length} found):`);
+          for (const token of foundTokens) {
+              let valStr = "";
+              try {
+                  let p = token.fiatPrice || 0;
+                  if (!p) {
+                      p = await getPriceCore(token.coingeckoId || token.symbol, USER_SETTINGS.currency);
+                  }
+                  if (p > 0) {
+                      const val = (parseFloat(token.balance) * p).toFixed(2);
+                      valStr = ` (≈ ${val} ${USER_SETTINGS.currency})`;
+                  }
+              } catch (e) {}
+              console.log(`   ✨ ${token.balance} ${token.symbol}${valStr} [${token.name}] (${token.address})`);
+          }
+      } else {
+          console.log(`\n💎 Tokens: No ERC-20 tokens with a positive balance found on ${network.name}.`);
+          console.log(`   (Scanned ${candidateTokens.length} verified tokens dynamically across ${network.name})`);
       }
   }
 }
@@ -1201,71 +1506,82 @@ async function checkPortfolio() {
     const wallets = await listWallets();
     if (wallets.length === 0) return;
 
-    console.log(`\n📊 Generating Portfolio Overview (This may take a moment)...`);
-    
-    let grandTotal = 0;
-    const report = [];
+    const wChoices = wallets.map(w => ({ name: `${w.name} (${w.address})`, value: w.address }));
+    wChoices.push({ name: '🌐 Scan ALL Wallets in Vault', value: 'ALL' });
+    wChoices.push({ name: '🔙 Back', value: 'BACK' });
 
-    // Fetch Prices Once
-    const prices = {};
-    for (const key of Object.keys(NETWORKS)) {
-        if (NETWORKS[key].coingeckoId) {
-            prices[key] = await getPrice(NETWORKS[key].coingeckoId);
+    const walletChoice = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'addr',
+        message: 'Select Wallet to scan for portfolio:',
+        choices: wChoices
+    }]);
+
+    if (walletChoice.addr === 'BACK') return;
+
+    const scanMode = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'type',
+        message: 'Select Scan Depth:',
+        choices: [
+            '⚡ Lightning Fast Scan (Active Holdings & Major Chains - ~3s - Recommended)',
+            '🔬 Deep Full Scan (All 260+ EVM Chains Network Sweep - ~12s)',
+            '🔙 Back'
+        ]
+    }]);
+
+    if (scanMode.type.startsWith('🔙')) return;
+    const isDeep = scanMode.type.includes('Deep Full Scan');
+
+    const walletsToScan = walletChoice.addr === 'ALL' 
+        ? wallets 
+        : wallets.filter(w => w.address === walletChoice.addr);
+
+    console.log(`\n📊 Scanning Multi-Chain Portfolio (Auto-detecting all tokens held)...`);
+
+    let grandNetWorth = 0;
+    const allReports = [];
+
+    for (const w of walletsToScan) {
+        console.log(`\n🔍 Scanning wallet: ${w.name} (${w.address})`);
+        
+        const scanRes = await scanPortfolio(w.address, {
+            deep: isDeep,
+            savedTokens: USER_SETTINGS.savedTokens || [],
+            onProgress: (p) => {
+                process.stdout.write(`\r   Scanning: ${p.scanned}/${p.total} (${p.currentChain}) - Found ${p.foundCount} assets... `);
+            }
+        });
+        console.log(`\r   ✅ Scan complete! Found ${scanRes.totalAssets} assets across ${scanRes.activeChainsCount} chains.            \n`);
+
+        grandNetWorth += parseFloat(scanRes.grandTotalUSD);
+        allReports.push({ wallet: w, result: scanRes });
+
+        if (scanRes.chainSummaries.length > 0) {
+            console.log(`--- Active Chains for ${w.name} ---`);
+            console.table(scanRes.chainSummaries.map(c => ({
+                Chain: c.chainName,
+                'Tokens Held': c.assetCount,
+                'Total Value': `$${c.totalUSDFormatted} USD`,
+                'Portfolio Share': c.pctOfTotal
+            })));
+        }
+
+        if (scanRes.assets.length > 0) {
+            console.log(`--- Auto-Detected Tokens & Balances for ${w.name} ---`);
+            console.table(scanRes.assets.slice(0, 30).map(a => ({
+                Asset: a.symbol,
+                Network: a.chainName,
+                Balance: parseFloat(a.balance).toFixed(4),
+                'Price (USD)': a.priceUSD ? `$${a.priceUSD.toFixed(2)}` : '$0.00',
+                'Value (USD)': `$${a.valueFormatted}`
+            })));
         }
     }
 
-    // Iterate Wallets
-    for (const w of wallets) {
-        let walletTotal = 0;
-        process.stdout.write(`Scanning ${w.name}... `);
-        
-        // Scan Networks (Parallel)
-        const promises = Object.keys(NETWORKS).map(async (netKey) => {
-            try {
-                const provider = new ethers.JsonRpcProvider(NETWORKS[netKey].rpc);
-                const balWei = await provider.getBalance(w.address);
-                const bal = parseFloat(ethers.formatEther(balWei));
-                if (bal > 0) {
-                    const val = bal * (prices[netKey] || 0);
-                    walletTotal += val;
-                }
-                
-                // Scan Tokens
-                if (PREDEFINED_TOKENS[netKey]) {
-                    for (const t of PREDEFINED_TOKENS[netKey]) {
-                        try {
-                            const contract = new ethers.Contract(t.address, ERC20_ABI, provider);
-                            const tBalWei = await contract.balanceOf(w.address);
-                            if (tBalWei > 0n) {
-                                const tBal = parseFloat(ethers.formatUnits(tBalWei, t.decimals));
-                                if (t.coingeckoId) {
-                                    const tPrice = await getPrice(t.coingeckoId);
-                                    walletTotal += tBal * tPrice;
-                                }
-                            }
-                        } catch(e) {}
-                    }
-                }
-            } catch (e) {
-                // Ignore network errors
-            }
-        });
-
-        await Promise.all(promises);
-        
-        grandTotal += walletTotal;
-        report.push({ name: w.name, address: w.address, value: walletTotal });
-        console.log(`Done. ($${walletTotal.toFixed(2)})`);
-    }
-
-    console.log("\n==========================================");
-    console.log(`💰 GRAND TOTAL: ${grandTotal.toFixed(2)} ${USER_SETTINGS.currency}`);
-    console.log("==========================================");
-    console.table(report.map(r => ({ 
-        Wallet: r.name, 
-        Address: `${r.address.substring(0,6)}...${r.address.substring(38)}`, 
-        Value: `${r.value.toFixed(2)} ${USER_SETTINGS.currency}` 
-    })));
+    console.log("\n" + "=".repeat(50));
+    console.log(`💰 GRAND TOTAL NET WORTH: $${grandNetWorth.toFixed(2)} USD`);
+    console.log("=".repeat(50));
 }
 
 async function transferAsset() {
@@ -1289,170 +1605,369 @@ async function transferAsset() {
     const network = await selectNetwork(true);
     if (network === 'BACK') return;
     
-    const provider = new ethers.JsonRpcProvider(network.rpc);
-    const connectedSigner = signer.connect(provider);
+    let provider;
+    try {
+        provider = await getWorkingProvider(network.chainId);
+    } catch (e) {
+        provider = getProvider(network.chainId);
+    }
+
+    process.stdout.write(`\n⏳ Scanning available assets in wallet on ${network.name}... `);
+
+    // A. Native balance
+    let nativeBal = 0;
+    try {
+        const balWei = await provider.getBalance(signer.address);
+        nativeBal = parseFloat(ethers.formatEther(balWei));
+    } catch (e) {}
+
+    // B. Discover all tokens on this chain dynamically (zero hardcoding)
+    const chainId = Number(network.chainId);
+    const candidateTokens = [];
+    const seenAddrs = new Set();
+
+    const addToken = (t) => {
+        if (!t || !t.address) return;
+        try {
+            const raw = t.address.toLowerCase();
+            if (raw === '0x0000000000000000000000000000000000000000') return;
+            const checkAddr = ethers.getAddress(raw);
+            if (!seenAddrs.has(raw)) {
+                seenAddrs.add(raw);
+                candidateTokens.push({
+                    address: checkAddr,
+                    symbol: t.symbol || 'TOKEN',
+                    name: t.name || t.symbol || 'Token',
+                    decimals: t.decimals != null ? Number(t.decimals) : 18,
+                    priceUSD: t.priceUSD != null ? parseFloat(t.priceUSD) : null
+                });
+            }
+        } catch (e) {}
+    };
+
+    let allChainTokens = [];
+    try {
+        allChainTokens = await getTokensForChain(chainId);
+        if (Array.isArray(allChainTokens)) allChainTokens.forEach(addToken);
+    } catch (e) {}
+
+    if (COMMON_TOKENS_BY_CHAIN[chainId]) COMMON_TOKENS_BY_CHAIN[chainId].forEach(addToken);
+    if (USER_SETTINGS.savedTokens) {
+        USER_SETTINGS.savedTokens.filter(t => t.chainId === chainId || t.network === String(chainId)).forEach(addToken);
+    }
+
+    // C. Multicall3 query for sender wallet balance
+    const heldTokens = [];
+    const multicall3Addr = network.multicall3 || "0xca11bde05977b3631167028862be2a173976ca11";
+    try {
+        const mc3Abi = ["function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"];
+        const erc20 = new ethers.Interface(["function balanceOf(address) view returns (uint256)"]);
+        const mc3 = new ethers.Contract(multicall3Addr, mc3Abi, provider);
+
+        const CHUNK_SIZE = 250;
+        const chunks = [];
+        for (let i = 0; i < candidateTokens.length; i += CHUNK_SIZE) {
+            chunks.push(candidateTokens.slice(i, i + CHUNK_SIZE));
+        }
+
+        await Promise.all(chunks.map(async (chunk) => {
+            const calls = chunk.map(t => ({
+                target: t.address,
+                allowFailure: true,
+                callData: erc20.encodeFunctionData("balanceOf", [signer.address])
+            }));
+            try {
+                const res = await Promise.race([
+                    mc3.aggregate3(calls),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 7000))
+                ]);
+                res.forEach((r, idx) => {
+                    if (r.success && r.returnData && r.returnData !== '0x') {
+                        const balWei = BigInt(r.returnData);
+                        if (balWei > 0n) {
+                            const token = chunk[idx];
+                            const formatted = ethers.formatUnits(balWei, token.decimals);
+                            if (parseFloat(formatted) > 0.000001) {
+                                heldTokens.push({ ...token, balance: formatted, balanceRaw: balWei.toString() });
+                            }
+                        }
+                    }
+                });
+            } catch (e) {}
+        }));
+    } catch (e) {}
+
+    process.stdout.write(`Done!\n`);
 
     // 3. Select Asset
-    const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
-    const assetOptions = [
-        { name: `Native Coin (${network.currency})`, value: 'native' }
-    ];
+    const assetOptions = [];
 
-    if (PREDEFINED_TOKENS[networkKey]) {
-        PREDEFINED_TOKENS[networkKey].forEach(t => {
-            assetOptions.push({ name: `${t.symbol} Token`, value: t });
+    // Native option
+    assetOptions.push({
+        name: `💰 Native ${network.currency} (Balance: ${nativeBal} ${network.currency})`,
+        value: { type: 'native', symbol: network.currency, decimals: 18, balance: nativeBal.toString() }
+    });
+
+    // All auto-detected held tokens
+    if (heldTokens.length > 0) {
+        for (const tok of heldTokens) {
+            assetOptions.push({
+                name: `💎 ${tok.symbol} (Balance: ${tok.balance}) - ${tok.name} [${tok.address.slice(0, 8)}...]`,
+                value: { type: 'token', ...tok }
+            });
+        }
+    }
+
+    // Search verified catalog
+    if (candidateTokens.length > 0) {
+        assetOptions.push({
+            name: `🔍 Search Other Verified Tokens on ${network.name} (${candidateTokens.length} available)`,
+            value: { type: 'search' }
         });
     }
 
-    assetOptions.push({ name: 'Custom Token Address', value: 'custom' });
-    assetOptions.push({ name: '🔙 Back', value: 'BACK' });
+    assetOptions.push({ name: '✏️  Enter Custom Token Contract Address', value: { type: 'custom' } });
+    assetOptions.push({ name: '🔙 Back', value: { type: 'BACK' } });
 
     const assetChoice = await inquirer.prompt([
         {
             type: 'rawlist',
-            name: 'type',
-            message: 'What do you want to send?',
+            name: 'selected',
+            message: 'Select Asset to Send:',
             choices: assetOptions
         }
     ]);
 
-    if (assetChoice.type === 'BACK') return;
+    let selectedAsset = assetChoice.selected;
+    if (selectedAsset.type === 'BACK') return;
 
-    let tokenAddress = null;
-    let decimals = 18;
-    let symbol = network.currency;
+    if (selectedAsset.type === 'search') {
+        const searchPrompt = await inquirer.prompt([{
+            type: 'input',
+            name: 'q',
+            message: 'Search token by Symbol or Name (e.g. USDC, DAI, PUSD):'
+        }]);
+        const q = searchPrompt.q.trim().toLowerCase();
+        const matches = candidateTokens.filter(t => 
+            t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
+        ).slice(0, 25);
 
-    if (assetChoice.type === 'native') {
-        // do nothing, default
-    } else if (assetChoice.type === 'custom') {
-        const addrInput = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Enter Token Contract Address:' }]);
-        tokenAddress = addrInput.addr;
-    } else {
-        // Predefined token object
-        tokenAddress = assetChoice.type.address;
-        decimals = assetChoice.type.decimals;
-        symbol = assetChoice.type.symbol;
-    }
+        if (matches.length === 0) {
+            console.log(`❌ No tokens found matching "${searchPrompt.q}".`);
+            return;
+        }
 
-    if (tokenAddress && assetChoice.type === 'custom') {
+        const pickSearch = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'tok',
+            message: `Matching Tokens (${matches.length} found):`,
+            choices: [
+                ...matches.map(m => ({ name: `${m.symbol} - ${m.name} (${m.address.slice(0, 10)}...)`, value: m })),
+                { name: '🔙 Cancel', value: 'BACK' }
+            ]
+        }]);
+        if (pickSearch.tok === 'BACK') return;
+        selectedAsset = { type: 'token', ...pickSearch.tok };
+        
         try {
-            const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-            decimals = await contract.decimals();
-            symbol = await contract.symbol();
+            const c = new ethers.Contract(selectedAsset.address, ERC20_ABI, provider);
+            const b = await c.balanceOf(signer.address);
+            selectedAsset.balance = ethers.formatUnits(b, selectedAsset.decimals);
         } catch (e) {
-            console.log("❌ Invalid token address or network error.");
+            selectedAsset.balance = '0.0';
+        }
+    } else if (selectedAsset.type === 'custom') {
+        const addrInput = await inquirer.prompt([{
+            type: 'input',
+            name: 'addr',
+            message: 'Enter Token Contract Address:',
+            validate: (val) => ethers.isAddress(val.trim()) ? true : "Invalid address"
+        }]);
+        const cAddr = ethers.getAddress(addrInput.addr.trim());
+        try {
+            const c = new ethers.Contract(cAddr, ERC20_ABI, provider);
+            const [sym, dec, balWei] = await Promise.all([
+                c.symbol().catch(() => 'TOKEN'),
+                c.decimals().catch(() => 18),
+                c.balanceOf(signer.address).catch(() => 0n)
+            ]);
+            selectedAsset = {
+                type: 'token',
+                address: cAddr,
+                symbol: sym,
+                name: sym,
+                decimals: Number(dec),
+                balance: ethers.formatUnits(balWei, Number(dec))
+            };
+        } catch (e) {
+            console.log("❌ Could not read ERC-20 contract details.");
             return;
         }
     }
 
-    // 4. Recipient
-    let recipientAddress = null;
-    
-    // Check if we have other wallets to send to
-    const otherWallets = DECRYPTED_WALLETS.filter(w => w.wallet.address !== senderWalletData.wallet.address);
-    
-    let destType = 'manual';
-    if (otherWallets.length > 0) {
-        const destChoice = await inquirer.prompt([
-            {
-                type: 'rawlist',
-                name: 'dest',
-                message: 'Send to:',
-                choices: ['Manual Address Entry', 'My Other Wallets']
+    console.log(`\nSelected: ${selectedAsset.symbol} ${selectedAsset.name ? `(${selectedAsset.name})` : ''}`);
+    console.log(`Available Balance: ${selectedAsset.balance || '0.0'} ${selectedAsset.symbol}`);
+
+    // 4. Amount Selection
+    const avail = parseFloat(selectedAsset.balance || '0');
+    const amtModePrompt = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'mode',
+        message: 'How much do you want to send?',
+        choices: [
+            ...(avail > 0 ? [`⚡ Send MAX (${selectedAsset.balance} ${selectedAsset.symbol})`] : []),
+            `🔢 Enter Token Amount (${selectedAsset.symbol})`,
+            `💵 Enter Fiat Value (${USER_SETTINGS.currency})`,
+            `🔙 Back`
+        ]
+    }]);
+
+    if (amtModePrompt.mode === '🔙 Back') return;
+
+    let finalAmount = '0';
+    if (amtModePrompt.mode.startsWith('⚡ Send MAX')) {
+        finalAmount = selectedAsset.balance;
+    } else if (amtModePrompt.mode.startsWith('🔢 Enter Token Amount')) {
+        const amtInput = await inquirer.prompt([{
+            type: 'input',
+            name: 'val',
+            message: `Enter amount in ${selectedAsset.symbol}:`,
+            validate: (v) => {
+                const n = parseFloat(v);
+                if (isNaN(n) || n <= 0) return "Please enter a valid positive number";
+                return true;
             }
-        ]);
-        destType = destChoice.dest;
+        }]);
+        finalAmount = amtInput.val.trim();
+    } else {
+        // Fiat mode
+        let unitPrice = 0;
+        if (selectedAsset.priceUSD) {
+            const fiatRate = await getFiatRate(USER_SETTINGS.currency);
+            unitPrice = selectedAsset.priceUSD * fiatRate;
+        } else {
+            unitPrice = await getPriceCore(selectedAsset.symbol, USER_SETTINGS.currency);
+        }
+        if (!unitPrice || unitPrice <= 0) {
+            console.log(`⚠️  Could not resolve live price for ${selectedAsset.symbol}. Please enter token amount manually.`);
+            const amtInput = await inquirer.prompt([{
+                type: 'input',
+                name: 'val',
+                message: `Enter amount in ${selectedAsset.symbol}:`
+            }]);
+            finalAmount = amtInput.val.trim();
+        } else {
+            console.log(`ℹ️  Current price: 1 ${selectedAsset.symbol} ≈ ${unitPrice.toFixed(4)} ${USER_SETTINGS.currency}`);
+            const fiatInput = await inquirer.prompt([{
+                type: 'input',
+                name: 'fiat',
+                message: `Enter amount in ${USER_SETTINGS.currency}:`,
+                validate: (v) => parseFloat(v) > 0 ? true : "Must be > 0"
+            }]);
+            const valToken = parseFloat(fiatInput.fiat) / unitPrice;
+            finalAmount = valToken.toFixed(selectedAsset.decimals > 6 ? 6 : selectedAsset.decimals);
+            console.log(`💱 ${fiatInput.fiat} ${USER_SETTINGS.currency} ≈ ${finalAmount} ${selectedAsset.symbol}`);
+        }
     }
 
-    if (destType === 'My Other Wallets') {
-        const targetChoice = await inquirer.prompt([
-            {
+    // 5. Recipient Selection
+    let recipientAddress = null;
+    const otherWallets = DECRYPTED_WALLETS.filter(w => w.wallet.address.toLowerCase() !== signer.address.toLowerCase());
+
+    if (otherWallets.length > 0) {
+        const destChoice = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'dest',
+            message: 'Send to:',
+            choices: ['Manual Address Entry', 'My Other Wallets in Vault']
+        }]);
+
+        if (destChoice.dest === 'My Other Wallets in Vault') {
+            const targetChoice = await inquirer.prompt([{
                 type: 'rawlist',
                 name: 'wallet',
                 message: 'Select Recipient Wallet:',
                 choices: otherWallets.map(w => ({ name: `${w.name} (${w.address})`, value: w.wallet.address }))
-            }
-        ]);
-        recipientAddress = targetChoice.wallet;
-    } else {
-        const manualInput = await inquirer.prompt([
-            { type: 'input', name: 'to', message: 'Recipient Address:' }
-        ]);
-        recipientAddress = manualInput.to;
+            }]);
+            recipientAddress = targetChoice.wallet;
+        }
     }
 
-    // 5. Amount
-    const amtType = await inquirer.prompt([{
-        type: 'rawlist',
-        name: 'mode',
-        message: 'Enter amount by:',
-        choices: [`Token Amount (e.g. 0.5)`, `Fiat Value (e.g. 5.00 ${USER_SETTINGS.currency})`]
+    if (!recipientAddress) {
+        const manualInput = await inquirer.prompt([{
+            type: 'input',
+            name: 'to',
+            message: 'Enter Recipient 0x Address:',
+            validate: (val) => {
+                if (!val || !ethers.isAddress(val.trim())) {
+                    return "Invalid EVM address. Please enter a valid 42-character 0x address.";
+                }
+                return true;
+            }
+        }]);
+        recipientAddress = ethers.getAddress(manualInput.to.trim());
+    }
+
+    // 6. Review & Confirmation
+    console.log("\n" + "=".repeat(50));
+    console.log("📋 TRANSACTION SUMMARY");
+    console.log("=".repeat(50));
+    console.log(`• Network:    ${network.name} (Chain ID: ${network.chainId})`);
+    console.log(`• Sender:     ${senderWalletData.name} (${signer.address})`);
+    console.log(`• Recipient:  ${recipientAddress}`);
+    console.log(`• Asset:      ${selectedAsset.symbol} ${selectedAsset.type === 'token' ? `[Contract: ${selectedAsset.address}]` : '(Native)'}`);
+    console.log(`• Amount:     ${finalAmount} ${selectedAsset.symbol}`);
+    console.log("=".repeat(50));
+
+    const confirm = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'ok',
+        message: `Are you sure you want to send ${finalAmount} ${selectedAsset.symbol}?`,
+        default: true
     }]);
 
-    let finalAmount = '0';
-
-    if (amtType.mode.startsWith('Token')) {
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Amount to send (${symbol}):` }]);
-        finalAmount = input.val;
-    } else {
-        // Need price.
-        // For Native: network.coingeckoId
-        // For Token: assetChoice.type.coingeckoId (if preset) or unknown
-        let geckoId = null;
-        if (assetChoice.type === 'native') geckoId = network.coingeckoId;
-        else if (assetChoice.type.coingeckoId) geckoId = assetChoice.type.coingeckoId;
-
-        if (!geckoId) {
-            console.log("❌ Price data not available for this asset.");
-            return;
-        }
-
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter ${USER_SETTINGS.currency} Amount:` }]);
-        const price = await getPrice(geckoId);
-        if (price === 0) { console.log("❌ Price fetch failed."); return; }
-        
-        const usdVal = parseFloat(input.val);
-        const tokenVal = usdVal / price;
-        finalAmount = tokenVal.toFixed(6);
-        console.log(`💱 ${usdVal} ${USER_SETTINGS.currency} ≈ ${finalAmount} ${symbol}`);
+    if (!confirm.ok) {
+        console.log("🚫 Transfer cancelled.");
+        return;
     }
 
-    const details = { amount: finalAmount };
-
-    console.log(`\n🚀 Preparing to send ${details.amount} ${symbol} on ${network.name}...`);
-    console.log(`   To: ${recipientAddress}`);
-    
+    // 7. Execute Transaction
+    console.log(`\n⏳ Broadcasting transaction on ${network.name}...`);
     try {
         let txResponse;
-        if (tokenAddress) {
-            const contract = new ethers.Contract(tokenAddress, ERC20_ABI, connectedSigner);
-            const amountWei = ethers.parseUnits(details.amount, decimals);
+        const connectedSigner = signer.connect(provider);
+
+        if (selectedAsset.type === 'token') {
+            const contract = new ethers.Contract(selectedAsset.address, ERC20_ABI, connectedSigner);
+            const amountWei = ethers.parseUnits(finalAmount, selectedAsset.decimals);
             txResponse = await contract.transfer(recipientAddress, amountWei);
         } else {
-            // Native Transfer
-            const amountWei = ethers.parseEther(details.amount);
+            const amountWei = ethers.parseEther(finalAmount);
             const txRequest = {
                 to: recipientAddress,
                 value: amountWei
             };
-            
-            // Add Gas Buffer if configured
             if (USER_SETTINGS.gasLimitBuffer && USER_SETTINGS.gasLimitBuffer !== '0') {
                 const estimatedGas = await connectedSigner.estimateGas(txRequest);
                 txRequest.gasLimit = estimatedGas + BigInt(USER_SETTINGS.gasLimitBuffer);
             }
-
             txResponse = await connectedSigner.sendTransaction(txRequest);
         }
-        console.log(`✅ Transaction Sent! Hash: ${txResponse.hash}`);
+
+        console.log(`\n🎉 Transaction Broadcast Successfully!`);
+        console.log(`🔗 Tx Hash: ${txResponse.hash}`);
+        const exp = network.explorer || (network.explorers && network.explorers[0]?.url) || '';
+        if (exp) {
+            console.log(`🌐 Explorer: ${exp}/tx/${txResponse.hash}`);
+        }
     } catch (e) {
         console.error(`❌ Transaction Failed: ${e.message}`);
     }
 }
 
-async function swapToken() {
-    console.log("\n🔄 Swap Token for Native Currency (e.g. JMPT -> BNB)");
-    console.log("⚠️  Requires Native Currency (Gas) to execute transaction.\n");
+async function swapAndBridge() {
+    console.log("\n🔄 Swap & Cross-Chain Bridge Engine");
+    console.log("⚡ Powered by Multi-DEX & Multi-Bridge Routing across 70+ Chains\n");
 
     const wallets = await listWallets();
     if (wallets.length === 0) return;
@@ -1467,162 +1982,371 @@ async function swapToken() {
     const selectedWalletData = DECRYPTED_WALLETS.find(w => w.wallet.address === walletChoice.addr);
     const signer = selectedWalletData.wallet;
 
-    // 2. Select Network
-    const network = await selectNetwork(true);
-    if (network === 'BACK') return;
-    const networkKey = Object.keys(NETWORKS).find(key => NETWORKS[key].rpc === network.rpc);
-
-    if (!ROUTERS[networkKey]) {
-        console.log("❌ Swap not supported on this network yet.");
-        return;
-    }
-
-    const provider = new ethers.JsonRpcProvider(network.rpc);
-    const connectedSigner = signer.connect(provider);
-
-    // 3. Select Token
-    const tokenOptions = [];
-    if (PREDEFINED_TOKENS[networkKey]) {
-        PREDEFINED_TOKENS[networkKey].forEach(t => tokenOptions.push({ name: t.symbol, value: t }));
-    }
-    // Add saved tokens
-    if (USER_SETTINGS.savedTokens) {
-        USER_SETTINGS.savedTokens.filter(t => t.network === networkKey).forEach(t => tokenOptions.push({ name: t.symbol, value: t }));
-    }
-    tokenOptions.push({ name: 'Custom Address', value: 'custom' });
-    tokenOptions.push({ name: '🔙 Back', value: 'BACK' });
-
-    const tokenChoice = await inquirer.prompt([{ type: 'rawlist', name: 'token', message: 'Select Token to Sell:', choices: tokenOptions }]);
-    if (tokenChoice.token === 'BACK') return;
-
-    let tokenData = tokenChoice.token;
-    if (tokenChoice.token === 'custom') {
-        const input = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Contract Address:' }]);
-        try {
-            const c = new ethers.Contract(input.addr, ERC20_ABI, provider);
-            tokenData = { 
-                address: input.addr, 
-                symbol: await c.symbol(), 
-                decimals: await c.decimals() 
-            };
-        } catch(e) { console.log("Invalid Token"); return; }
-    }
-
-    // 4. Amount
-    const amtType = await inquirer.prompt([{
+    // 2. Select Mode
+    const modeChoice = await inquirer.prompt([{
         type: 'rawlist',
         name: 'mode',
-        message: 'How do you want to specify the amount?',
-        choices: [`By Token Amount (e.g. 0.5 ${tokenData.symbol})`, `By Fiat Value (e.g. 5.00 ${USER_SETTINGS.currency})`]
+        message: 'Select Operation Mode:',
+        choices: [
+            '🌉 Cross-Chain Bridge (e.g. Ethereum -> Polygon / Base -> Arbitrum)',
+            '🔄 Same-Chain Token Swap (e.g. ETH -> USDT)',
+            '🔙 Back'
+        ]
     }]);
 
-    let finalTokenAmount = '0';
+    if (modeChoice.mode.startsWith('🔙')) return;
+    const isBridge = modeChoice.mode.startsWith('🌉');
 
-    if (amtType.mode.startsWith('By Token')) {
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Amount of ${tokenData.symbol} to swap:` }]);
-        finalTokenAmount = input.val;
-    } else {
-        if (!tokenData.coingeckoId) {
-            console.log(`❌ Cannot swap by Fiat: Price data unavailable for ${tokenData.symbol}.`);
-            return;
+    // 3. Select Source Chain
+    console.log("\n📍 Select SOURCE Chain:");
+    const fromNetwork = await selectNetwork(true);
+    if (fromNetwork === 'BACK') return;
+
+    // 4. Select Source Token
+    process.stdout.write(`\n⏳ Scanning tokens & balances on ${fromNetwork.name}... `);
+    const fromTokens = await getTokensForChain(fromNetwork.chainId);
+    
+    // Check if user holds any tokens on source network
+    const heldSourceTokens = [];
+    try {
+        const fromProvider = await getWorkingProvider(fromNetwork.chainId).catch(() => getProvider(fromNetwork.chainId));
+        const mc3 = new ethers.Contract(fromNetwork.multicall3 || "0xca11bde05977b3631167028862be2a173976ca11", [
+            "function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"
+        ], fromProvider);
+        const erc20 = new ethers.Interface(["function balanceOf(address) view returns (uint256)"]);
+        const nonNativeFrom = fromTokens.filter(t => !t.isNative && t.address);
+        const CHUNK = 250;
+        const chunks = [];
+        for (let i = 0; i < nonNativeFrom.length; i += CHUNK) chunks.push(nonNativeFrom.slice(i, i + CHUNK));
+        await Promise.all(chunks.map(async chunk => {
+            const calls = chunk.map(t => ({
+                target: t.address,
+                allowFailure: true,
+                callData: erc20.encodeFunctionData("balanceOf", [signer.address])
+            }));
+            try {
+                const res = await Promise.race([mc3.aggregate3(calls), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))]);
+                res.forEach((r, idx) => {
+                    if (r.success && r.returnData && r.returnData !== '0x') {
+                        const bal = BigInt(r.returnData);
+                        if (bal > 0n) {
+                            const tok = chunk[idx];
+                            heldSourceTokens.push({ ...tok, balance: ethers.formatUnits(bal, tok.decimals) });
+                        }
+                    }
+                });
+            } catch (e) {}
+        }));
+    } catch (e) {}
+    process.stdout.write(`Done!\n`);
+
+    const fromTokenChoices = [];
+    if (heldSourceTokens.length > 0) {
+        for (const ht of heldSourceTokens) {
+            fromTokenChoices.push({
+                name: `💎 ${ht.symbol} (Balance: ${ht.balance}) - ${ht.name}`,
+                value: ht
+            });
         }
-        const input = await inquirer.prompt([{ type: 'input', name: 'val', message: `Enter ${USER_SETTINGS.currency} Amount (e.g. 5):` }]);
-        
-        console.log("⏳ Fetching price...");
-        const price = await getPrice(tokenData.coingeckoId);
-        if (price === 0) {
-            console.log("❌ Failed to fetch price.");
-            return;
-        }
-        
-        const usdAmount = parseFloat(input.val);
-        const tokenCount = usdAmount / price;
-        finalTokenAmount = tokenCount.toFixed(6); // 6 decimals precision
-        console.log(`💱 ${usdAmount} ${USER_SETTINGS.currency} ≈ ${finalTokenAmount} ${tokenData.symbol} (Price: ${price} ${USER_SETTINGS.currency})`);
+    }
+    const nativeFrom = fromTokens.find(t => t.isNative) || { address: '0x0000000000000000000000000000000000000000', symbol: fromNetwork.currency, name: `${fromNetwork.name} Native`, decimals: 18, isNative: true };
+    fromTokenChoices.push({
+        name: `💰 ${nativeFrom.symbol} - ${nativeFrom.name} (Native Coin)`,
+        value: nativeFrom
+    });
+
+    const popularFrom = fromTokens.filter(t => !t.isNative && !heldSourceTokens.some(h => h.address.toLowerCase() === t.address.toLowerCase())).slice(0, 15);
+    popularFrom.forEach(t => {
+        fromTokenChoices.push({
+            name: `${t.symbol} - ${t.name} (${t.address.slice(0, 8)}...)`,
+            value: t
+        });
+    });
+
+    fromTokenChoices.push({ name: `🔍 Search All ${fromTokens.length} Tokens on ${fromNetwork.name}`, value: 'search' });
+    fromTokenChoices.push({ name: '✏️  Enter Custom Token Address', value: 'custom' });
+    fromTokenChoices.push({ name: '🔙 Back', value: 'BACK' });
+
+    const fromTokenChoice = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'token',
+        message: 'Select Token to Pay:',
+        choices: fromTokenChoices
+    }]);
+
+    if (fromTokenChoice.token === 'BACK') return;
+    let selectedFromToken = fromTokenChoice.token;
+    if (selectedFromToken === 'search') {
+        const qInput = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Enter Token Symbol or Name to Search:' }]);
+        const q = qInput.q.trim().toLowerCase();
+        const matches = fromTokens.filter(t => t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 25);
+        if (matches.length === 0) { console.log(`❌ No tokens matching "${qInput.q}"`); return; }
+        const pick = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'tok',
+            message: `Matching Tokens (${matches.length} found):`,
+            choices: [...matches.map(m => ({ name: `${m.symbol} - ${m.name} (${m.address.slice(0, 8)}...)`, value: m })), { name: '🔙 Cancel', value: 'BACK' }]
+        }]);
+        if (pick.tok === 'BACK') return;
+        selectedFromToken = pick.tok;
+    } else if (selectedFromToken === 'custom') {
+        const customAddr = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Contract Address:' }]);
+        selectedFromToken = { address: customAddr.addr.trim(), symbol: 'TOKEN', decimals: 18, isNative: false };
     }
 
-    const amountIn = ethers.parseUnits(finalTokenAmount, tokenData.decimals);
-
-    // 5. Check Approval
-    const routerAddress = ROUTERS[networkKey];
-    console.log(`DEBUG: Token Address: ${tokenData.address}`);
-    console.log(`DEBUG: Router Address: ${routerAddress}`);
-    
-    const tokenContract = new ethers.Contract(tokenData.address, ERC20_ABI, connectedSigner);
-    
-    console.log("⏳ Checking allowance...");
-    const allowance = await tokenContract.allowance(signer.address, routerAddress);
-    
-    if (allowance < amountIn) {
-        const approvePrompt = await inquirer.prompt([{ type: 'rawlist', name: 'ok', message: `Router needs approval to spend your ${tokenData.symbol}. Approve?`, choices: ['Yes', 'No'] }]);
-        if (approvePrompt.ok === 'No') return;
-
-        console.log("🚀 Approving (max)...");
-        try {
-            const txApprove = await tokenContract.approve(routerAddress, ethers.MaxUint256);
-            console.log(`✅ Approved! Hash: ${txApprove.hash}`);
-            console.log("⏳ Waiting for confirmation...");
-            await txApprove.wait();
-        } catch (e) {
-            if (e.code === 'INSUFFICIENT_FUNDS') {
-                console.log(`❌ Insufficient Native Currency (BNB/ETH) to pay for gas. You cannot trade without it.`);
-            } else {
-                console.log(`❌ Approval Failed: ${e.message}`);
-            }
-            return;
-        }
+    // 5. Select Destination Chain & Token
+    let toNetwork = fromNetwork;
+    if (isBridge) {
+        console.log("\n🎯 Select DESTINATION Chain:");
+        toNetwork = await selectNetwork(true);
+        if (toNetwork === 'BACK') return;
     }
 
-    // 6. Execute Swap
-    // Native wrapped address is needed for path.
-    // WETH/WBNB addresses
-    const WNATIVE = {
-        "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        "bsc": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-        "polygon": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-        "celo": "0x471EcE3750Da237f93b8E339c536989b8978a438"
-    };
+    console.log(`\n⏳ Fetching verified tokens on ${toNetwork.name}...`);
+    const toTokens = await getTokensForChain(toNetwork.chainId);
+    const toTokenChoices = [];
+    const nativeTo = toTokens.find(t => t.isNative) || { address: '0x0000000000000000000000000000000000000000', symbol: toNetwork.currency, name: `${toNetwork.name} Native`, decimals: 18, isNative: true };
+    toTokenChoices.push({
+        name: `💰 ${nativeTo.symbol} - ${nativeTo.name} (Native Coin)`,
+        value: nativeTo
+    });
 
-    if (!WNATIVE[networkKey]) {
-        console.log("❌ WNative address missing for this chain.");
+    const popularTo = toTokens.filter(t => !t.isNative).slice(0, 15);
+    popularTo.forEach(t => {
+        toTokenChoices.push({
+            name: `${t.symbol} - ${t.name} (${t.address.slice(0, 8)}...)`,
+            value: t
+        });
+    });
+
+    toTokenChoices.push({ name: `🔍 Search All ${toTokens.length} Tokens on ${toNetwork.name}`, value: 'search' });
+    toTokenChoices.push({ name: '✏️  Enter Custom Token Address', value: 'custom' });
+    toTokenChoices.push({ name: '🔙 Back', value: 'BACK' });
+
+    const toTokenChoice = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'token',
+        message: 'Select Token to Receive:',
+        choices: toTokenChoices
+    }]);
+
+    if (toTokenChoice.token === 'BACK') return;
+    let selectedToToken = toTokenChoice.token;
+    if (selectedToToken === 'search') {
+        const qInput = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Enter Token Symbol or Name to Search:' }]);
+        const q = qInput.q.trim().toLowerCase();
+        const matches = toTokens.filter(t => t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 25);
+        if (matches.length === 0) { console.log(`❌ No tokens matching "${qInput.q}"`); return; }
+        const pick = await inquirer.prompt([{
+            type: 'rawlist',
+            name: 'tok',
+            message: `Matching Tokens (${matches.length} found):`,
+            choices: [...matches.map(m => ({ name: `${m.symbol} - ${m.name} (${m.address.slice(0, 8)}...)`, value: m })), { name: '🔙 Cancel', value: 'BACK' }]
+        }]);
+        if (pick.tok === 'BACK') return;
+        selectedToToken = pick.tok;
+    } else if (selectedToToken === 'custom') {
+        const customAddr = await inquirer.prompt([{ type: 'input', name: 'addr', message: 'Contract Address:' }]);
+        selectedToToken = { address: customAddr.addr.trim(), symbol: 'TOKEN', decimals: 18, isNative: false };
+    }
+
+    // 6. Specify Amount
+    const amtInput = await inquirer.prompt([{
+        type: 'input',
+        name: 'val',
+        message: `Enter Amount of ${selectedFromToken.symbol} to ${isBridge ? 'Bridge' : 'Swap'}:`
+    }]);
+
+    const amountIn = amtInput.val.trim();
+    if (!amountIn || isNaN(parseFloat(amountIn)) || parseFloat(amountIn) <= 0) {
+        console.log("❌ Invalid amount.");
         return;
     }
 
-    const path = [tokenData.address, WNATIVE[networkKey]];
-    const routerContract = new ethers.Contract(routerAddress, ROUTER_ABI, connectedSigner);
-    
-    // Get Quote
-    // try {
-    //    const amounts = await routerContract.getAmountsOut(amountIn, path);
-    //    const amountOutMin = amounts[1] * 95n / 100n; // 5% slippage tolerance (simple)
-    // } catch ... (skip quote for speed/simplicity or use 0 min for now with caution)
-    
-    console.log("🚀 Swapping...");
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
-    
+    // 7. Slippage
+    const slipChoice = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'slip',
+        message: 'Slippage Tolerance:',
+        choices: ['0.5% (Recommended)', '1.0%', '2.0%', 'Custom']
+    }]);
+
+    let slippage = 0.005;
+    if (slipChoice.slip === '1.0%') slippage = 0.01;
+    if (slipChoice.slip === '2.0%') slippage = 0.02;
+    if (slipChoice.slip === 'Custom') {
+        const cust = await inquirer.prompt([{ type: 'input', name: 'v', message: 'Enter slippage % (e.g. 0.8):' }]);
+        slippage = parseFloat(cust.v) / 100;
+    }
+
+    // 8. Fetch Route & Estimate
+    console.log(`\n⏳ Fetching optimal routing across bridges & DEXs...`);
+    let quote;
     try {
-        // Use SupportingFeeOnTransferTokens to be safe with all tokens
-        const txSwap = await routerContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            amountIn,
-            0, // accept any amount of ETH (risky but simple for CLI). Ideally use getAmountsOut
-            path,
-            selectedWalletData.address,
-            deadline
-        );
-        console.log(`✅ Swap Sent! Hash: ${txSwap.hash}`);
+        quote = await getQuote({
+            fromChainId: fromNetwork.chainId,
+            toChainId: toNetwork.chainId,
+            fromTokenAddress: selectedFromToken.address,
+            toTokenAddress: selectedToToken.address,
+            fromAmount: amountIn,
+            fromAddress: signer.address,
+            slippage: slippage
+        });
     } catch (e) {
-        if (e.code === 'INSUFFICIENT_FUNDS') {
-            console.log(`❌ Insufficient Native Currency to pay for gas.`);
+        console.log(`❌ Quote Failed: ${e.message}`);
+        return;
+    }
+
+    // 9. Display Live Estimation Breakdown
+    console.log("\n" + "=".repeat(60));
+    console.log(`  ⚡ LIVE ESTIMATION & ROUTE BREAKDOWN`);
+    console.log("=".repeat(60));
+    console.log(`  Route Tool:            ${quote.provider.toUpperCase()} (${quote.isCrossChain ? 'Cross-Chain Bridge' : 'DEX Aggregator'})`);
+    console.log(`  You Pay:               ${quote.fromAmount} ${quote.fromToken.symbol} on ${quote.fromChain.name}`);
+    console.log(`  Estimated Output:      ${quote.toAmount} ${quote.toToken.symbol} on ${quote.toChain.name}`);
+    console.log(`  Guaranteed Minimum:    ${quote.toAmountMin} ${quote.toToken.symbol}`);
+    console.log(`  Exchange Rate:         ${quote.exchangeRate}`);
+    console.log(`  Estimated Duration:    ${quote.durationFormatted}`);
+    console.log(`  Estimated Gas Cost:    ${quote.gasCostUSD ? '$' + quote.gasCostUSD + ' USD' : 'N/A'}`);
+    console.log(`  Protocol/Bridge Fee:   ${quote.feeCostUSD ? '$' + quote.feeCostUSD + ' USD' : '$0.00 USD'}`);
+    console.log(`  Total Route Fees:      $${quote.totalFeesUSD} USD`);
+    console.log(`  Max Slippage:          ${quote.slippagePct}`);
+    console.log("=".repeat(60) + "\n");
+
+    // 10. User Confirmation
+    const confirm = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'ok',
+        message: `Execute this ${quote.isCrossChain ? 'Bridge transfer' : 'Swap'} now?`,
+        default: true
+    }]);
+
+    if (!confirm.ok) {
+        console.log("Cancelled.");
+        return;
+    }
+
+    // 11. Execute
+    console.log("\n🚀 Initiating transaction...");
+    try {
+        const provider = await getWorkingProvider(quote.fromChain.id);
+        const connectedSigner = signer.connect(provider);
+
+        const execRes = await executeQuote(connectedSigner, quote, (st) => {
+            console.log(`   ⚙️ ${st.message}`);
+        });
+
+        console.log(`\n✅ Transaction Confirmed in block ${execRes.blockNumber}!`);
+        console.log(`   Tx Hash: ${execRes.hash}`);
+        if (fromNetwork.explorer) {
+            console.log(`   Explorer: ${fromNetwork.explorer}/tx/${execRes.hash}`);
+        }
+
+        if (execRes.isCrossChain) {
+            console.log(`\n🌉 Tracking cross-chain bridge progress...`);
+            let attempts = 0;
+            const poll = setInterval(async () => {
+                attempts++;
+                if (attempts > 20) {
+                    clearInterval(poll);
+                    console.log("   Transfer is still processing in background. Funds will arrive shortly.");
+                    return;
+                }
+                const st = await checkTransferStatus(execRes.hash, quote.fromChain.id, quote.toChain.id);
+                if (st && st.status === 'DONE') {
+                    console.log("   🎉 Cross-Chain Transfer Successfully Completed!");
+                    clearInterval(poll);
+                }
+            }, 6000);
+        }
+    } catch (e) {
+        console.log(`❌ Execution failed: ${e.message}`);
+    }
+}
+
+async function exploreChainsCLI() {
+    console.log("\n🌐 260+ EVM Chains Explorer");
+    const popular = getPopularChains();
+    
+    const action = await inquirer.prompt([{
+        type: 'rawlist',
+        name: 'do',
+        message: 'Chain Explorer Options:',
+        choices: [
+            '🔍 Search Chains (by Name, Symbol, or Chain ID)',
+            '⚡ View Popular Chains & Swap Compatibility',
+            '📡 Test RPC Latency / Ping',
+            '🔙 Back'
+        ]
+    }]);
+
+    if (action.do.startsWith('🔙')) return;
+
+    if (action.do.startsWith('🔍 Search')) {
+        const query = await inquirer.prompt([{ type: 'input', name: 'q', message: 'Enter Chain Name, Symbol, or Chain ID:' }]);
+        const results = searchChains(query.q);
+        if (results.length === 0) {
+            console.log("❌ No chains found.");
+            return;
+        }
+        console.table(results.slice(0, 25).map(c => ({
+            Name: c.name,
+            'Chain ID': c.chainId,
+            Currency: c.currency,
+            'Swap/Bridge': c.hasSwapBridge ? '✅ Yes' : 'DEX Only',
+            RPC: c.rpc
+        })));
+    } else if (action.do.startsWith('⚡ View Popular')) {
+        console.table(popular.map(c => ({
+            Name: c.name,
+            'Chain ID': c.chainId,
+            Currency: c.currency,
+            'Swap/Bridge': c.hasSwapBridge ? '✅ Yes' : 'DEX Only',
+            Explorer: c.explorer || 'N/A'
+        })));
+    } else if (action.do.startsWith('📡 Test RPC')) {
+        const net = await selectNetwork(true);
+        if (net === 'BACK') return;
+        console.log(`📡 Pinging ${net.name} (${net.rpc})...`);
+        const latency = await testRpcLatency(net);
+        if (latency.ok) {
+            console.log(`✅ Success! Latency: ${latency.latency}ms | Current Block: ${latency.block}`);
         } else {
-            console.log(`❌ Swap Failed: ${e.message}`);
+            console.log(`❌ Failed: ${latency.error} (${latency.latency}ms)`);
         }
     }
 }
+
 
 // --- WalletConnect Logic ---
 
 async function main() {
   console.log("\n🚀 Multi-Wallet CLI Manager");
+
+  // Check if no local wallets exist, and check if a cloud backup is available to restore
+  if (loadWalletsRaw().length === 0) {
+      try {
+          const cloud = await checkCloudBackupAvailable(USER_SETTINGS);
+          if (cloud.available) {
+              console.log(`\n☁️  No local wallets found, but a cloud backup was detected on ${cloud.method === 'rclone' ? `Rclone ('${cloud.remote}')` : 'Google Drive'}!`);
+              const answer = await inquirer.prompt([{
+                  type: 'confirm',
+                  name: 'restore',
+                  message: 'Would you like to automatically import and restore your wallet vault from the cloud backup?',
+                  default: true
+              }]);
+              if (answer.restore) {
+                  const res = await restoreFromCloud(USER_SETTINGS, { remote: cloud.remote, method: cloud.method, restoreSettings: true });
+                  if (res.success) {
+                      console.log(`✅ Restored ${res.count} wallet(s) from cloud backup: ${(res.wallets || []).join(', ')}`);
+                      loadPublicWallets();
+                  } else {
+                      console.log(`⚠️  Cloud restore failed: ${res.error}`);
+                  }
+              }
+          }
+      } catch (e) {}
+  }
   
   // Check for direct WC URI in args
   const wcArg = process.argv.find(arg => arg.startsWith('wc:'));
@@ -1647,9 +2371,11 @@ async function main() {
           'Show Private Key',
           'Delete Wallet',
           'Check Balance',
-          'Portfolio Overview',
+          'Portfolio Overview (Auto-Scan Tokens & Chains)',
+          'Launch Web Analytics Dashboard (No Password Needed)',
           'Transfer Assets (Tokens/Native)',
-          'Swap Token -> Native',
+          'Swap & Bridge Assets (Cross-Chain & Same-Chain)',
+          'Explore 260+ EVM Chains',
           'Connect to dApp (WalletConnect)',
           'Settings',
           new inquirer.Separator(),
@@ -1669,7 +2395,6 @@ async function main() {
             await importWallet();
             break;
           case 'List Wallets':
-            await ensureWalletsUnlocked();
             const w = await listWallets();
             console.table(w.map(w => ({ Name: w.name, Address: w.address })));
             break;
@@ -1686,20 +2411,27 @@ async function main() {
             await deleteWallet();
             break;
           case 'Check Balance':
-            await ensureWalletsUnlocked();
             await checkBalance();
             break;
-          case 'Portfolio Overview':
-            await ensureWalletsUnlocked();
+          case 'Portfolio Overview (Auto-Scan Tokens & Chains)':
             await checkPortfolio();
+            break;
+          case 'Launch Web Analytics Dashboard (No Password Needed)':
+            console.log("\n🌐 Launching Web Analytics Dashboard...");
+            console.log("👉 Dashboard URL: http://localhost:3000");
+            console.log("🔒 Security: 100% Read-Only Mode (Private Keys NEVER loaded)\n");
+            await import('./web.js');
             break;
           case 'Transfer Assets (Tokens/Native)':
             await ensureWalletsUnlocked();
             await transferAsset();
             break;
-          case 'Swap Token -> Native':
+          case 'Swap & Bridge Assets (Cross-Chain & Same-Chain)':
             await ensureWalletsUnlocked();
-            await swapToken();
+            await swapAndBridge();
+            break;
+          case 'Explore 260+ EVM Chains':
+            await exploreChainsCLI();
             break;
           case 'Connect to dApp (WalletConnect)':
             await ensureWalletsUnlocked();

@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Wallet Pro | EVM Portfolio & Multi-Chain Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #09090b;
+            --bg-surface-1: #121214;
+            --bg-surface-2: #18181b;
+            --bg-surface-3: #222226;
+            --bg-surface-4: #2e2e33;
+
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-medium: rgba(255, 255, 255, 0.12);
+            --border-prominent: rgba(255, 255, 255, 0.22);
+
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --text-muted: #52525b;
+
+            --accent-green: #22c55e;
+            --accent-cyan: #38bdf8;
+            --accent-magenta: #c084fc;
+            --accent-amber: #f59e0b;
+            --accent-blue: #3b82f6;
+
+            --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: "JetBrains Mono", Menlo, monospace;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* App Container */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-read-only {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--accent-green);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-read-only::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Wallet Selector Bar */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .wallet-select-wrapper {
+            position: relative;
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wallet-select-wrapper select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .wallet-select-wrapper select option {
+            background: var(--bg-surface-1);
+            color: var(--text-primary);
+        }
+
+        /* Action Buttons */
+        .btn {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            font-family: var(--font-ui);
+        }
+
+        .btn:hover {
+            background: var(--bg-surface-3);
+            border-color: var(--border-prominent);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            border-color: #60a5fa;
+        }
+
+        .btn-purple {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.35);
+            color: var(--accent-magenta);
+        }
+        .btn-purple:hover {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--border-medium);
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-value.green {
+            color: var(--accent-green);
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+            font-family: var(--font-mono);
+        }
+
+        /* Allocation Bar */
+        .allocation-card {
+            background: var(--bg-surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .allocation-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .allocation-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .allocation-bar {
+            height: 12px;
+            width: 100%;
+            background: var(--bg-surface-3);
+            border-radius: 999px;
+            display: flex;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .allocation-segment {
+            height: 100%;
+            transition: width 0.4s ease;
+            position: relative;
+        }
+
+        .allocation-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        /* Table Section */
+        .table-section {
+            background: var(--bg-surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-toolbar {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .tabs-list {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-surface-3);
+            color: var(--text-primary);
+            border-color: var(--border-medium);
+        }
+
+        .search-box {
+            position: relative;
+            min-width: 260px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-medium);
+            padding: 7px 12px 7px 32px;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        /* Asset Table */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-surface-2);
+            padding: 12px 18px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 13px;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .asset-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .asset-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-surface-3);
+            border: 1px solid var(--border-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+        }
+
+        .asset-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .asset-symbol {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .asset-name {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .network-badge {
+            background: var(--bg-surface-3);
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            display: inline-block;
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+        }
+
+        .value-cell {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+
+        .share-bar-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .share-bar-mini {
+            width: 50px;
+            height: 6px;
+            background: var(--bg-surface-3);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .share-bar-fill {
+            height: 100%;
+            background: var(--accent-green);
+        }
+
+        /* Chains Drawer / Explorer */
+        .chains-drawer {
+            display: none;
+            background: var(--bg-surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .chains-drawer.open {
+            display: block;
+        }
+
+        .chains-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            max-height: 480px;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding-right: 6px;
+        }
+
+        .chain-card {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.15s ease;
+        }
+
+        .chain-card:hover {
+            border-color: var(--border-medium);
+            background: var(--bg-surface-3);
+        }
+
+        .chain-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .chain-card-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .chain-card-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+
+        .chain-ping-btn {
+            background: var(--bg-surface-3);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+        }
+
+        .chain-ping-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--border-prominent);
+        }
+
+        /* Toast notifications */
+        #toastContainer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideIn 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            font-family: var(--font-mono);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header>
+            <div class="brand">
+                <div class="brand-logo">⚡</div>
+                <div>
+                    <div class="brand-title">
+                        Multi-Wallet Pro
+                        <span class="badge-read-only">Read-Only Analytics</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div class="wallet-select-wrapper">
+                    <span>👛</span>
+                    <select id="walletSelector" onchange="onWalletChanged()">
+                        <option value="">Loading wallets...</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" id="btnFastScan" onclick="triggerScan(false)">
+                    <span>⚡</span> Fast Scan
+                </button>
+                <button class="btn btn-purple" id="btnDeepScan" onclick="triggerScan(true)">
+                    <span>🔬</span> Full Scan (260+)
+                </button>
+                <button class="btn" id="btnToggleChains" onclick="toggleChainsDrawer()">
+                    <span>🌐</span> 260+ Chains
+                </button>
+                <button class="btn" onclick="exportCsv()">
+                    <span>📥</span> CSV
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    <span>Total Net Worth</span>
+                    <span>💵</span>
+                </div>
+                <div class="kpi-value green" id="netWorthDisplay">$0.00</div>
+                <div class="kpi-subtext" id="netWorthSubtext">Ready to scan</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    <span>Active Blockchains</span>
+                    <span>⛓️</span>
+                </div>
+                <div class="kpi-value" id="activeChainsCount">0</div>
+                <div class="kpi-subtext" id="activeChainsSubtext">260+ EVM Chains Supported</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    <span>Total Assets Held</span>
+                    <span>💎</span>
+                </div>
+                <div class="kpi-value" id="totalAssetsCount">0</div>
+                <div class="kpi-subtext">Auto-detected Tokens & Native</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    <span>Vault Security</span>
+                    <span>🛡️</span>
+                </div>
+                <div class="kpi-value" style="font-size: 20px; color: var(--accent-cyan);">Non-Custodial</div>
+                <div class="kpi-subtext">Private Keys NEVER Unlocked Here</div>
+            </div>
+        </section>
+
+        <!-- Chain Allocation Visualizer -->
+        <section class="allocation-card">
+            <div class="allocation-header">
+                <div class="allocation-title">Network Distribution & Chain Share</div>
+                <div id="allocationShareSubtext" style="font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono);">0% across 0 networks</div>
+            </div>
+            <div class="allocation-bar" id="allocationBar">
+                <div class="allocation-segment" style="width: 100%; background: var(--bg-surface-3);"></div>
+            </div>
+            <div class="allocation-legend" id="allocationLegend"></div>
+        </section>
+
+        <!-- 260+ Chains Explorer Drawer -->
+        <section class="chains-drawer" id="chainsDrawer">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 600;">260+ EVM Verified Chains Matrix</h3>
+                    <p style="font-size: 12px; color: var(--text-secondary);">Direct high-availability RPC registry with fallback endpoints</p>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="chainSearchInput" placeholder="Filter 260+ chains..." oninput="onChainSearch(this.value)">
+                </div>
+            </div>
+            <div class="chains-grid" id="chainsGrid">Loading chains...</div>
+        </section>
+
+        <!-- Asset Holdings Table Section -->
+        <section class="table-section">
+            <div class="table-toolbar">
+                <div class="tabs-list">
+                    <button class="tab-btn active" onclick="setFilter('all', this)">All Assets</button>
+                    <button class="tab-btn" onclick="setFilter('stable', this)">Stablecoins</button>
+                    <button class="tab-btn" onclick="setFilter('native', this)">Native Coins</button>
+                    <button class="tab-btn" onclick="setFilter('l2', this)">L2 & Rollups</button>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="tokenSearchInput" placeholder="Search symbol, network, or token..." oninput="onTokenSearch(this.value)">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Network</th>
+                            <th>Balance</th>
+                            <th>Price (USD)</th>
+                            <th>Total Value</th>
+                            <th>Share</th>
+                            <th>Explorer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-tertiary); padding: 36px;">
+                                No assets loaded. Select a wallet and click Fast Scan or Full Scan.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div>⚡ Multi-Wallet Pro Web Workstation • 260+ EVM Chains • Li.Fi / RouteScan / DefiLlama Engine</div>
+            <div>Security: Local Keystore Vault • AES-GCM Encrypted on Device</div>
+        </footer>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        const CHAIN_COLORS = [
+            '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
+            '#06b6d4', '#6366f1', '#14b8a6', '#f97316', '#a855f7'
+        ];
+
+        let currentWalletAddress = '';
+        let currentPortfolio = null;
+        let allChainsCatalog = [];
+        let currentFilter = 'all';
+        let currentSearchQuery = '';
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // 1. Initial Load: Wallets list
+        async function loadWallets() {
+            try {
+                const res = await fetch('/api/wallets');
+                const data = await res.json();
+                const selector = document.getElementById('walletSelector');
+                selector.innerHTML = '';
+
+                if (data.wallets && data.wallets.length > 0) {
+                    data.wallets.forEach((w, idx) => {
+                        const opt = document.createElement('option');
+                        opt.value = w.address;
+                        opt.textContent = `${w.name} (${w.address.slice(0, 6)}...${w.address.slice(-4)})`;
+                        selector.appendChild(opt);
+                    });
+                    currentWalletAddress = data.wallets[0].address;
+                    // Load instant cached portfolio (0ms)
+                    loadPortfolio(currentWalletAddress, false, false);
+                } else {
+                    selector.innerHTML = '<option value="">No Wallets Found</option>';
+                }
+            } catch (e) {
+                showToast('Failed to load wallets: ' + e.message, 'error');
+            }
+        }
+
+        function onWalletChanged() {
+            const selector = document.getElementById('walletSelector');
+            currentWalletAddress = selector.value;
+            loadPortfolio(currentWalletAddress, false, false);
+        }
+
+        // 2. Fetch Portfolio Data
+        async function loadPortfolio(address, deep = false, refresh = false) {
+            if (!address) return;
+            const netWorthEl = document.getElementById('netWorthDisplay');
+            if (refresh) {
+                netWorthEl.innerHTML = `<span class="spinner"></span> Scanning...`;
+            }
+
+            try {
+                const url = `/api/portfolio?address=${address}&deep=${deep}&refresh=${refresh}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.success && data.portfolio) {
+                    currentPortfolio = data.portfolio;
+                    renderPortfolio(data.portfolio, data.cached);
+                    if (refresh) {
+                        showToast(`Scan complete! Found ${data.portfolio.totalAssets} assets across ${data.portfolio.activeChainsCount} chains.`, 'success');
+                    }
+                } else {
+                    showToast(data.error || 'Failed to fetch portfolio', 'error');
+                }
+            } catch (e) {
+                showToast('Error loading portfolio: ' + e.message, 'error');
+            }
+        }
+
+        function triggerScan(deep = false) {
+            const btn = deep ? document.getElementById('btnDeepScan') : document.getElementById('btnFastScan');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="spinner"></span> Scanning...`;
+            btn.disabled = true;
+
+            showToast(deep ? 'Starting Deep Scan across all 260+ EVM chains...' : 'Running Fast Scan on priority networks...', 'info');
+
+            loadPortfolio(currentWalletAddress, deep, true).finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // 3. Render Dashboard Components
+        function renderPortfolio(p, isCached) {
+            document.getElementById('netWorthDisplay').textContent = `$${p.grandTotalUSD} USD`;
+            document.getElementById('netWorthSubtext').textContent = isCached ? 'Loaded from local vault cache' : 'Live on-chain verified';
+            document.getElementById('activeChainsCount').textContent = p.activeChainsCount;
+            document.getElementById('activeChainsSubtext').textContent = `Top: ${p.chainSummaries[0] ? p.chainSummaries[0].chainName + ' (' + p.chainSummaries[0].pctOfTotal + ')' : '-'}`;
+            document.getElementById('totalAssetsCount').textContent = p.totalAssets;
+
+            // Allocation Bar
+            const bar = document.getElementById('allocationBar');
+            const legend = document.getElementById('allocationLegend');
+            bar.innerHTML = '';
+            legend.innerHTML = '';
+
+            document.getElementById('allocationShareSubtext').textContent = `${p.activeChainsCount} chains holding assets`;
+
+            const topChains = (p.chainSummaries || []).slice(0, 8);
+            topChains.forEach((c, idx) => {
+                const color = CHAIN_COLORS[idx % CHAIN_COLORS.length];
+                const pctNum = parseFloat(c.pctOfTotal);
+
+                // Segment
+                if (pctNum > 0) {
+                    const seg = document.createElement('div');
+                    seg.className = 'allocation-segment';
+                    seg.style.width = `${pctNum}%`;
+                    seg.style.background = color;
+                    seg.title = `${c.chainName}: $${c.totalUSDFormatted} (${c.pctOfTotal})`;
+                    bar.appendChild(seg);
+                }
+
+                // Legend
+                const leg = document.createElement('div');
+                leg.className = 'legend-item';
+                leg.innerHTML = `<span class="legend-dot" style="background:${color};"></span> <span>${c.chainName}</span> <span style="color:var(--text-tertiary);">${c.pctOfTotal}</span>`;
+                legend.appendChild(leg);
+            });
+
+            // Assets Table
+            renderAssetsTable();
+        }
+
+        function setFilter(filter, el) {
+            currentFilter = filter;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+            renderAssetsTable();
+        }
+
+        function onTokenSearch(query) {
+            currentSearchQuery = (query || '').toLowerCase().trim();
+            renderAssetsTable();
+        }
+
+        function renderAssetsTable() {
+            if (!currentPortfolio || !currentPortfolio.assets) return;
+            const tbody = document.getElementById('assetsTableBody');
+            tbody.innerHTML = '';
+
+            let assets = [...currentPortfolio.assets];
+
+            // 1. Filter by category
+            if (currentFilter === 'stable') {
+                const stables = ['USDC', 'USDC.E', 'USDT', 'USDT0', 'DAI', 'XDAI', 'CUSD', 'AUSD', 'BUSD'];
+                assets = assets.filter(a => stables.includes(a.symbol.toUpperCase()));
+            } else if (currentFilter === 'native') {
+                assets = assets.filter(a => a.isNative);
+            } else if (currentFilter === 'l2') {
+                const l2s = [8453, 42161, 10, 59144, 534352, 324, 81457, 5000, 34443];
+                assets = assets.filter(a => l2s.includes(a.chainId));
+            }
+
+            // 2. Filter by search query
+            if (currentSearchQuery) {
+                assets = assets.filter(a =>
+                    a.symbol.toLowerCase().includes(currentSearchQuery) ||
+                    (a.name && a.name.toLowerCase().includes(currentSearchQuery)) ||
+                    a.chainName.toLowerCase().includes(currentSearchQuery) ||
+                    (a.address && a.address.toLowerCase().includes(currentSearchQuery))
+                );
+            }
+
+            if (assets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-tertiary);">No assets matching filter or search.</td></tr>`;
+                return;
+            }
+
+            const grandTotal = parseFloat(currentPortfolio.grandTotalUSD) || 1;
+
+            assets.forEach(a => {
+                const tr = document.createElement('tr');
+                const valNum = parseFloat(a.valueUSD) || 0;
+                const sharePct = ((valNum / grandTotal) * 100).toFixed(1);
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="asset-cell">
+                            <div class="asset-avatar">${a.symbol.slice(0, 3).toUpperCase()}</div>
+                            <div class="asset-info">
+                                <span class="asset-symbol">${a.symbol}</span>
+                                <span class="asset-name">${a.name || a.symbol}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="network-badge">${a.chainName}</span>
+                    </td>
+                    <td class="mono">${parseFloat(a.balance).toFixed(4)}</td>
+                    <td class="mono">$${a.priceUSD ? a.priceUSD.toFixed(2) : '0.00'}</td>
+                    <td class="value-cell">$${a.valueFormatted}</td>
+                    <td>
+                        <div class="share-bar-wrapper">
+                            <div class="share-bar-mini">
+                                <div class="share-bar-fill" style="width: ${Math.min(100, Math.max(2, sharePct))}%;"></div>
+                            </div>
+                            <span class="mono" style="font-size: 11px; color: var(--text-tertiary);">${sharePct}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        ${a.address && a.address !== '0x0000000000000000000000000000000000000000'
+                            ? `<a href="https://blockscan.com/address/${a.address}" target="_blank" style="color:var(--accent-cyan); text-decoration:none;">View ↗</a>`
+                            : `<span style="color:var(--text-tertiary);">-</span>`
+                        }
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 4. Chains Catalog Drawer
+        async function loadChains() {
+            try {
+                const res = await fetch('/api/chains');
+                const data = await res.json();
+                if (data.chains) {
+                    allChainsCatalog = data.chains;
+                    renderChainsGrid(allChainsCatalog);
+                }
+            } catch (e) {}
+        }
+
+        function toggleChainsDrawer() {
+            const drawer = document.getElementById('chainsDrawer');
+            drawer.classList.toggle('open');
+            if (drawer.classList.contains('open') && allChainsCatalog.length === 0) {
+                loadChains();
+            }
+        }
+
+        function onChainSearch(q) {
+            const query = (q || '').toLowerCase().trim();
+            const filtered = allChainsCatalog.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.currency.toLowerCase().includes(query) ||
+                String(c.chainId).includes(query)
+            );
+            renderChainsGrid(filtered);
+        }
+
+        function renderChainsGrid(chains) {
+            const grid = document.getElementById('chainsGrid');
+            grid.innerHTML = '';
+            chains.slice(0, 100).forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'chain-card';
+                card.innerHTML = `
+                    <div class="chain-card-info">
+                        <span class="chain-card-name">${c.name}</span>
+                        <span class="chain-card-meta">ID: ${c.chainId} • ${c.currency}</span>
+                    </div>
+                    <button class="chain-ping-btn" onclick="pingChain(${c.chainId}, this)">Ping RPC</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function pingChain(chainId, btn) {
+            btn.textContent = '...';
+            try {
+                const res = await fetch(`/api/ping?chainId=${chainId}`);
+                const data = await res.json();
+                if (data.ok) {
+                    btn.textContent = `${data.latency}ms`;
+                    btn.style.color = 'var(--accent-green)';
+                } else {
+                    btn.textContent = 'Fail';
+                    btn.style.color = 'var(--accent-amber)';
+                }
+            } catch (e) {
+                btn.textContent = 'Err';
+            }
+        }
+
+        function exportCsv() {
+            if (!currentWalletAddress) return;
+            window.location.href = `/api/export/csv?address=${currentWalletAddress}`;
+        }
+
+        // Init on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadWallets();
+        });
+    </script>
+</body>
+</html>

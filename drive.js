@@ -17,7 +17,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 // --- Rclone Logic ---
 
-async function checkRclone() {
+export async function checkRclone() {
     try {
         await execPromise('rclone version');
         return true;
@@ -26,7 +26,7 @@ async function checkRclone() {
     }
 }
 
-async function getRcloneRemotes() {
+export async function getRcloneRemotes() {
     try {
         const { stdout } = await execPromise('rclone listremotes');
         return stdout.split('\n').filter(r => r.trim() !== '').map(r => r.replace(':', ''));
@@ -64,6 +64,13 @@ export async function setupRclone() {
 }
 
 async function backupWithRclone(remoteName) {
+    const remotes = await getRcloneRemotes();
+    if (!remotes.includes(remoteName)) {
+        console.log(`☁️  Rclone remote '${remoteName}' not found in rclone config.`);
+        console.log(`   👉 Run 'rclone config' in terminal to configure it, or disable backups in [Settings].`);
+        return;
+    }
+
     console.log(`☁️  Backing up via Rclone (${remoteName})...`);
     try {
         const dest = `${remoteName}:${BACKUP_FOLDER_NAME}`;
@@ -238,4 +245,263 @@ export async function triggerBackup(settings) {
     } else if (settings.backupMethod === 'gapi') {
         await backupToDrive();
     }
+}
+
+// --- Restore & Cloud Import Logic ---
+
+export async function checkCloudBackupAvailable(settings = {}) {
+    // 1. Check Rclone remotes
+    if (await checkRclone()) {
+        const remotes = await getRcloneRemotes();
+        const candidateRemotes = [];
+        if (settings.rcloneRemote && remotes.includes(settings.rcloneRemote)) {
+            candidateRemotes.push(settings.rcloneRemote);
+        }
+        for (const r of remotes) {
+            if (!candidateRemotes.includes(r)) candidateRemotes.push(r);
+        }
+
+        for (const remote of candidateRemotes) {
+            try {
+                const { stdout } = await execPromise(`rclone lsf "${remote}:${BACKUP_FOLDER_NAME}"`);
+                if (stdout.includes('my_wallets.json')) {
+                    const files = stdout.split('\n').map(s => s.trim()).filter(Boolean);
+                    return {
+                        available: true,
+                        method: 'rclone',
+                        remote: remote,
+                        files: files
+                    };
+                }
+            } catch (e) {}
+        }
+    }
+
+    // 2. Check Google Drive Native API
+    const auth = getAuthClient();
+    const token = loadToken();
+    if (auth && token) {
+        try {
+            const drive = google.drive({ version: 'v3', auth });
+            const res = await drive.files.list({
+                q: `mimeType='application/vnd.google-apps.folder' and name='${BACKUP_FOLDER_NAME}' and trashed=false`,
+                fields: 'files(id, name)',
+                spaces: 'drive',
+            });
+            if (res.data.files && res.data.files.length > 0) {
+                const folderId = res.data.files[0].id;
+                const fileRes = await drive.files.list({
+                    q: `name='my_wallets.json' and '${folderId}' in parents and trashed=false`,
+                    fields: 'files(id, name)',
+                });
+                if (fileRes.data.files && fileRes.data.files.length > 0) {
+                    return {
+                        available: true,
+                        method: 'gapi',
+                        remote: 'Google Drive Native API',
+                        files: ['my_wallets.json']
+                    };
+                }
+            }
+        } catch (e) {}
+    }
+
+    return { available: false };
+}
+
+export async function restoreWithRclone(remoteName, options = { merge: false }) {
+    const remotes = await getRcloneRemotes();
+    if (!remotes.includes(remoteName)) {
+        return { success: false, error: `Rclone remote '${remoteName}' not found.` };
+    }
+
+    console.log(`☁️  Fetching cloud backup from Rclone (${remoteName}:${BACKUP_FOLDER_NAME})...`);
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wallet-restore-'));
+    try {
+        await execPromise(`rclone copy "${remoteName}:${BACKUP_FOLDER_NAME}/my_wallets.json" "${tempDir}"`);
+        const tempWalletFile = path.join(tempDir, 'my_wallets.json');
+        if (!fs.existsSync(tempWalletFile)) {
+            return { success: false, error: 'my_wallets.json was not found in remote backup folder.' };
+        }
+
+        const cloudWallets = JSON.parse(fs.readFileSync(tempWalletFile, 'utf8'));
+        if (!Array.isArray(cloudWallets)) {
+            return { success: false, error: 'Invalid wallet data format in cloud backup.' };
+        }
+
+        const localWalletFile = path.join(CONFIG_DIR, 'my_wallets.json');
+        let finalWallets = cloudWallets;
+
+        if (fs.existsSync(localWalletFile)) {
+            // Safety backup of existing local file
+            const bakFile = path.join(CONFIG_DIR, `my_wallets.json.bak-${Date.now()}`);
+            fs.copyFileSync(localWalletFile, bakFile);
+
+            if (options.merge) {
+                const localWallets = JSON.parse(fs.readFileSync(localWalletFile, 'utf8'));
+                const getAddr = (w) => {
+                    if (w.privateKey) return w.privateKey.toLowerCase();
+                    if (w.data) {
+                        try {
+                            const parsed = typeof w.data === 'string' ? JSON.parse(w.data) : w.data;
+                            return (parsed.address || '').toLowerCase();
+                        } catch (e) {}
+                    }
+                    return w.name.toLowerCase();
+                };
+
+                const existingAddrs = new Set(localWallets.map(getAddr));
+                let addedCount = 0;
+                for (const cw of cloudWallets) {
+                    const addr = getAddr(cw);
+                    if (!existingAddrs.has(addr)) {
+                        localWallets.push(cw);
+                        existingAddrs.add(addr);
+                        addedCount++;
+                    }
+                }
+                finalWallets = localWallets;
+                console.log(`🔄 Merged ${addedCount} new wallet(s) from cloud into local vault.`);
+            }
+        }
+
+        fs.writeFileSync(localWalletFile, JSON.stringify(finalWallets, null, 2));
+
+        // Restore settings if requested or if missing locally
+        const localSettingsFile = path.join(CONFIG_DIR, 'settings.json');
+        if (!fs.existsSync(localSettingsFile) || options.restoreSettings) {
+            try {
+                await execPromise(`rclone copy "${remoteName}:${BACKUP_FOLDER_NAME}/settings.json" "${tempDir}"`);
+                const tempSettings = path.join(tempDir, 'settings.json');
+                if (fs.existsSync(tempSettings)) {
+                    fs.copyFileSync(tempSettings, localSettingsFile);
+                    console.log("⚙️  Restored user settings from cloud backup.");
+                }
+            } catch (e) {}
+        }
+
+        return { 
+            success: true, 
+            count: finalWallets.length, 
+            wallets: finalWallets.map(w => w.name),
+            method: 'rclone', 
+            remote: remoteName 
+        };
+    } catch (e) {
+        return { success: false, error: e.message };
+    } finally {
+        try {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch (e) {}
+    }
+}
+
+export async function restoreWithDriveAPI(options = { merge: false }) {
+    const auth = getAuthClient();
+    const token = loadToken();
+    if (!auth || !token) {
+        return { success: false, error: 'Google Drive credentials or token not configured.' };
+    }
+
+    console.log("☁️  Fetching cloud backup from Google Drive (Native API)...");
+    const drive = google.drive({ version: 'v3', auth });
+
+    try {
+        const folderId = await findOrCreateFolder(drive, BACKUP_FOLDER_NAME);
+        const res = await drive.files.list({
+            q: `name='my_wallets.json' and '${folderId}' in parents and trashed=false`,
+            fields: 'files(id, name)',
+        });
+
+        if (!res.data.files || res.data.files.length === 0) {
+            return { success: false, error: 'my_wallets.json not found in Google Drive backup folder.' };
+        }
+
+        const fileId = res.data.files[0].id;
+        const fileRes = await drive.files.get({ fileId: fileId, alt: 'media' }, { responseType: 'text' });
+        const cloudWallets = typeof fileRes.data === 'string' ? JSON.parse(fileRes.data) : fileRes.data;
+
+        if (!Array.isArray(cloudWallets)) {
+            return { success: false, error: 'Invalid wallet data in Google Drive backup.' };
+        }
+
+        const localWalletFile = path.join(CONFIG_DIR, 'my_wallets.json');
+        let finalWallets = cloudWallets;
+
+        if (fs.existsSync(localWalletFile)) {
+            const bakFile = path.join(CONFIG_DIR, `my_wallets.json.bak-${Date.now()}`);
+            fs.copyFileSync(localWalletFile, bakFile);
+
+            if (options.merge) {
+                const localWallets = JSON.parse(fs.readFileSync(localWalletFile, 'utf8'));
+                const getAddr = (w) => {
+                    if (w.privateKey) return w.privateKey.toLowerCase();
+                    if (w.data) {
+                        try {
+                            const parsed = typeof w.data === 'string' ? JSON.parse(w.data) : w.data;
+                            return (parsed.address || '').toLowerCase();
+                        } catch (e) {}
+                    }
+                    return w.name.toLowerCase();
+                };
+
+                const existingAddrs = new Set(localWallets.map(getAddr));
+                let addedCount = 0;
+                for (const cw of cloudWallets) {
+                    const addr = getAddr(cw);
+                    if (!existingAddrs.has(addr)) {
+                        localWallets.push(cw);
+                        existingAddrs.add(addr);
+                        addedCount++;
+                    }
+                }
+                finalWallets = localWallets;
+                console.log(`🔄 Merged ${addedCount} new wallet(s) from cloud into local vault.`);
+            }
+        }
+
+        fs.writeFileSync(localWalletFile, JSON.stringify(finalWallets, null, 2));
+
+        // Restore settings if requested or missing
+        const localSettingsFile = path.join(CONFIG_DIR, 'settings.json');
+        if (!fs.existsSync(localSettingsFile) || options.restoreSettings) {
+            try {
+                const sRes = await drive.files.list({
+                    q: `name='settings.json' and '${folderId}' in parents and trashed=false`,
+                    fields: 'files(id, name)',
+                });
+                if (sRes.data.files && sRes.data.files.length > 0) {
+                    const sFileRes = await drive.files.get({ fileId: sRes.data.files[0].id, alt: 'media' }, { responseType: 'text' });
+                    const sData = typeof sFileRes.data === 'string' ? sFileRes.data : JSON.stringify(sFileRes.data, null, 2);
+                    fs.writeFileSync(localSettingsFile, sData);
+                    console.log("⚙️  Restored user settings from Google Drive.");
+                }
+            } catch (e) {}
+        }
+
+        return { 
+            success: true, 
+            count: finalWallets.length, 
+            wallets: finalWallets.map(w => w.name),
+            method: 'gapi' 
+        };
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function restoreFromCloud(settings = {}, options = {}) {
+    const method = options.method || settings.backupMethod || 'rclone';
+    if (method === 'rclone') {
+        let remote = options.remote || settings.rcloneRemote;
+        if (!remote) {
+            const remotes = await getRcloneRemotes();
+            if (remotes.length === 0) return { success: false, error: 'No Rclone remotes configured.' };
+            remote = remotes[0];
+        }
+        return await restoreWithRclone(remote, options);
+    } else if (method === 'gapi') {
+        return await restoreWithDriveAPI(options);
+    }
+    return { success: false, error: 'Unknown backup method' };
 }

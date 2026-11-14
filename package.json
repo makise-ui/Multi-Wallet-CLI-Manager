@@ -5,10 +5,14 @@
   "description": "",
   "bin": {
     "my-wallet": "./cli.js",
-    "my-wallet-tui": "./tui.js"
+    "my-wallet-tui": "./tui.js",
+    "my-wallet-web": "./web.js"
   },
   "main": "index.js",
   "scripts": {
+    "start": "node cli.js",
+    "tui": "node tui.js",
+    "web": "node web.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

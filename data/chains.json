@@ -1,0 +1,4356 @@
+[
+  {
+    "chainId": 1,
+    "key": "eth",
+    "name": "Ethereum",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://eth.drpc.org",
+    "rpcList": [
+      "https://eth.drpc.org",
+      "https://rpc.mevblocker.io",
+      "https://ethereum-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "Mainnet"
+  },
+  {
+    "chainId": 42161,
+    "key": "arb",
+    "name": "Arbitrum",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://arb1.arbitrum.io/rpc",
+    "rpcList": [
+      "https://arb1.arbitrum.io/rpc",
+      "https://arbitrum-one-rpc.publicnode.com",
+      "https://1rpc.io/arb"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://arbiscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 4663,
+    "key": "out",
+    "name": "Robinhood Chain",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.chain.robinhood.com",
+    "rpcList": [
+      "https://rpc.mainnet.chain.robinhood.com",
+      "https://robinhood-rpc.publicnode.com",
+      "https://rpc.arrowrpc.com",
+      "https://rpc.ordofi.network"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://robinhoodchain.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 8453,
+    "key": "bas",
+    "name": "Base",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.base.org",
+    "rpcList": [
+      "https://mainnet.base.org",
+      "https://base-rpc.publicnode.com",
+      "https://1rpc.io/base"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://basescan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 999,
+    "key": "hyp",
+    "name": "HyperEVM",
+    "currency": "HYPE",
+    "decimals": 18,
+    "rpc": "https://rpc.hyperliquid.xyz/evm",
+    "rpcList": [
+      "https://rpc.hyperliquid.xyz/evm",
+      "https://hyperliquid.drpc.org"
+    ],
+    "coingeckoId": "hyperliquid",
+    "explorer": "https://hyperevm.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 143,
+    "key": "mon",
+    "name": "Monad",
+    "currency": "MON",
+    "decimals": 18,
+    "rpc": "https://rpc.monad.xyz",
+    "rpcList": [
+      "https://rpc.monad.xyz"
+    ],
+    "coingeckoId": "MON",
+    "explorer": "https://monadvision.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 56,
+    "key": "bsc",
+    "name": "BSC",
+    "currency": "BNB",
+    "decimals": 18,
+    "rpc": "https://bsc-dataseed.binance.org",
+    "rpcList": [
+      "https://bsc-dataseed.binance.org",
+      "https://bsc-rpc.publicnode.com",
+      "https://1rpc.io/bnb"
+    ],
+    "coingeckoId": "BNB",
+    "explorer": "https://bscscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L1"
+  },
+  {
+    "chainId": 10,
+    "key": "opt",
+    "name": "OP Mainnet",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.optimism.io",
+    "rpcList": [
+      "https://mainnet.optimism.io",
+      "https://optimism-rpc.publicnode.com",
+      "https://1rpc.io/op"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://optimistic.etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 137,
+    "key": "pol",
+    "name": "Polygon",
+    "currency": "POL",
+    "decimals": 18,
+    "rpc": "https://polygon-bor-rpc.publicnode.com",
+    "rpcList": [
+      "https://polygon-bor-rpc.publicnode.com",
+      "https://1rpc.io/matic",
+      "https://rpc.ankr.com/polygon"
+    ],
+    "coingeckoId": "POL",
+    "explorer": "https://polygonscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L1"
+  },
+  {
+    "chainId": 43114,
+    "key": "ava",
+    "name": "Avalanche",
+    "currency": "AVAX",
+    "decimals": 18,
+    "rpc": "https://api.avax.network/ext/bc/C/rpc",
+    "rpcList": [
+      "https://api.avax.network/ext/bc/C/rpc",
+      "https://avalanche-c-chain-rpc.publicnode.com"
+    ],
+    "coingeckoId": "AVAX",
+    "explorer": "https://snowscan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L1"
+  },
+  {
+    "chainId": 100,
+    "key": "dai",
+    "name": "Gnosis",
+    "currency": "xDAI",
+    "decimals": 18,
+    "rpc": "https://rpc.gnosischain.com",
+    "rpcList": [
+      "https://rpc.gnosischain.com",
+      "https://gnosis-rpc.publicnode.com"
+    ],
+    "coingeckoId": "DAI",
+    "explorer": "https://gnosisscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1088,
+    "key": "mam",
+    "name": "Metis",
+    "currency": "METIS",
+    "decimals": 18,
+    "rpc": "https://andromeda.metis.io/?owner=1088",
+    "rpcList": [
+      "https://andromeda.metis.io/?owner=1088",
+      "https://metis.drpc.org",
+      "https://metis-rpc.publicnode.com"
+    ],
+    "coingeckoId": "METIS",
+    "explorer": "https://andromeda-explorer.metis.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 11155111,
+    "key": "eths",
+    "name": "Ethereum Sepolia Testnet",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.sepolia.org",
+    "rpcList": [
+      "https://rpc.sepolia.org",
+      "https://rpc2.sepolia.org",
+      "https://rpc.sepolia.ethpandaops.io",
+      "https://sepolia.gateway.tenderly.co"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://sepolia.etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 11155420,
+    "key": "opst",
+    "name": "OP Sepolia Testnet",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://sepolia.optimism.io",
+    "rpcList": [
+      "https://sepolia.optimism.io",
+      "https://optimism-sepolia.drpc.org"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://sepolia-optimism.etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1135,
+    "key": "lsk",
+    "name": "Lisk",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.api.lisk.com",
+    "rpcList": [
+      "https://rpc.api.lisk.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://blockscout.lisk.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 122,
+    "key": "fus",
+    "name": "FUSE",
+    "currency": "FUSE",
+    "decimals": 18,
+    "rpc": "https://rpc.fuse.io",
+    "rpcList": [
+      "https://rpc.fuse.io",
+      "https://fuse.drpc.org"
+    ],
+    "coingeckoId": "FUSE",
+    "explorer": "https://explorer.fuse.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 130,
+    "key": "uni",
+    "name": "Unichain",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.unichain.org",
+    "rpcList": [
+      "https://mainnet.unichain.org",
+      "https://unichain-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://uniscan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1329,
+    "key": "sei",
+    "name": "Sei",
+    "currency": "SEI",
+    "decimals": 18,
+    "rpc": "https://evm-rpc.sei-apis.com",
+    "rpcList": [
+      "https://evm-rpc.sei-apis.com"
+    ],
+    "coingeckoId": "SEI",
+    "explorer": "https://seiscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 13371,
+    "key": "imx",
+    "name": "Immutable zkEVM",
+    "currency": "IMX",
+    "decimals": 18,
+    "rpc": "https://rpc.immutable.com",
+    "rpcList": [
+      "https://rpc.immutable.com",
+      "https://immutable-zkevm.drpc.org"
+    ],
+    "coingeckoId": "IMX",
+    "explorer": "https://explorer.immutable.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 14,
+    "key": "flr",
+    "name": "Flare",
+    "currency": "FLR",
+    "decimals": 18,
+    "rpc": "https://flare-api.flare.network/ext/C/rpc",
+    "rpcList": [
+      "https://flare-api.flare.network/ext/C/rpc",
+      "https://flare.rpc.thirdweb.com",
+      "https://flare-bundler.etherspot.io",
+      "https://rpc.ankr.com/flare"
+    ],
+    "coingeckoId": "FLR",
+    "explorer": "https://flare-explorer.flare.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 146,
+    "key": "son",
+    "name": "Sonic",
+    "currency": "S",
+    "decimals": 18,
+    "rpc": "https://rpc.soniclabs.com",
+    "rpcList": [
+      "https://rpc.soniclabs.com",
+      "https://sonic-rpc.publicnode.com",
+      "https://sonic.drpc.org"
+    ],
+    "coingeckoId": "S",
+    "explorer": "https://sonicscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1480,
+    "key": "van",
+    "name": "Vana",
+    "currency": "VAN",
+    "decimals": 18,
+    "rpc": "https://rpc.vana.org/",
+    "rpcList": [
+      "https://rpc.vana.org/"
+    ],
+    "coingeckoId": "VAN",
+    "explorer": "https://vanascan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1625,
+    "key": "gra",
+    "name": "Gravity",
+    "currency": "G",
+    "decimals": 18,
+    "rpc": "https://rpc.gravity.xyz",
+    "rpcList": [
+      "https://rpc.gravity.xyz",
+      "https://rpc.ankr.com/gravity"
+    ],
+    "coingeckoId": "G",
+    "explorer": "https://explorer.gravity.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 16661,
+    "key": "zerog",
+    "name": "0G Mainnet",
+    "currency": "0G",
+    "decimals": 18,
+    "rpc": "https://evmrpc.0g.ai",
+    "rpcList": [
+      "https://evmrpc.0g.ai"
+    ],
+    "coingeckoId": "0G",
+    "explorer": "https://chainscan.0g.ai",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1672,
+    "key": "phr",
+    "name": "Pharos Mainnet",
+    "currency": "PROS",
+    "decimals": 18,
+    "rpc": "https://rpc.pharos.xyz",
+    "rpcList": [
+      "https://rpc.pharos.xyz"
+    ],
+    "coingeckoId": "PROS",
+    "explorer": "https://pharosscan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1776,
+    "key": "inj",
+    "name": "Injective",
+    "currency": "INJ",
+    "decimals": 18,
+    "rpc": "https://sentry.evm-rpc.injective.network",
+    "rpcList": [
+      "https://sentry.evm-rpc.injective.network",
+      "https://injectiveevm-rpc.polkachu.com"
+    ],
+    "coingeckoId": "INJ",
+    "explorer": "https://blockscout.injective.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1868,
+    "key": "soe",
+    "name": "Soneium",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.soneium.org",
+    "rpcList": [
+      "https://rpc.soneium.org"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://soneium.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 196,
+    "key": "xly",
+    "name": "XLayer",
+    "currency": "OKB",
+    "decimals": 18,
+    "rpc": "https://rpc.xlayer.tech",
+    "rpcList": [
+      "https://rpc.xlayer.tech",
+      "https://xlayerrpc.okx.com"
+    ],
+    "coingeckoId": "OKB",
+    "explorer": "https://www.oklink.com/xlayer",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 2020,
+    "key": "ron",
+    "name": "Ronin",
+    "currency": "RON",
+    "decimals": 18,
+    "rpc": "https://api.roninchain.com/rpc",
+    "rpcList": [
+      "https://api.roninchain.com/rpc"
+    ],
+    "coingeckoId": "RON",
+    "explorer": "https://app.roninchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 204,
+    "key": "opb",
+    "name": "opBNB",
+    "currency": "BNB",
+    "decimals": 18,
+    "rpc": "https://opbnb-mainnet-rpc.bnbchain.org",
+    "rpcList": [
+      "https://opbnb-mainnet-rpc.bnbchain.org",
+      "https://opbnb-mainnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3",
+      "https://opbnb-mainnet.nodereal.io/v1/e9a36765eb8a40b9bd12e680a1fd2bc5",
+      "https://opbnb-rpc.publicnode.com"
+    ],
+    "coingeckoId": "BNB",
+    "explorer": "https://opbnbscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 232,
+    "key": "lns",
+    "name": "Lens",
+    "currency": "GHO",
+    "decimals": 18,
+    "rpc": "https://rpc.lens.xyz",
+    "rpcList": [
+      "https://rpc.lens.xyz"
+    ],
+    "coingeckoId": "GHO",
+    "explorer": "https://explorer.lens.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 25,
+    "key": "cro",
+    "name": "Cronos",
+    "currency": "CRO",
+    "decimals": 18,
+    "rpc": "https://evm.cronos.org",
+    "rpcList": [
+      "https://evm.cronos.org",
+      "https://cronos-evm-rpc.publicnode.com",
+      "https://cronos.drpc.org"
+    ],
+    "coingeckoId": "CRO",
+    "explorer": "https://explorer.cronos.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 252,
+    "key": "fra",
+    "name": "Fraxtal",
+    "currency": "FRAX",
+    "decimals": 18,
+    "rpc": "https://rpc.frax.com",
+    "rpcList": [
+      "https://rpc.frax.com",
+      "https://fraxtal-rpc.publicnode.com"
+    ],
+    "coingeckoId": "FRAX",
+    "explorer": "https://fraxscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 2741,
+    "key": "abs",
+    "name": "Abstract",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://api.mainnet.abs.xyz",
+    "rpcList": [
+      "https://api.mainnet.abs.xyz"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://abscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 2818,
+    "key": "mop",
+    "name": "Morph",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.morphl2.io",
+    "rpcList": [
+      "https://rpc.morphl2.io",
+      "https://rpc-quicknode.morphl2.io"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.morphl2.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 288,
+    "key": "bob",
+    "name": "Boba",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.boba.network",
+    "rpcList": [
+      "https://mainnet.boba.network",
+      "https://boba-ethereum.gateway.tenderly.co",
+      "https://gateway.tenderly.co/public/boba-ethereum",
+      "https://boba-eth.drpc.org"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://bobascan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 30,
+    "key": "rsk",
+    "name": "Rootstock",
+    "currency": "RBTC",
+    "decimals": 18,
+    "rpc": "https://public-node.rsk.co",
+    "rpcList": [
+      "https://public-node.rsk.co",
+      "https://mycrypto.rsk.co"
+    ],
+    "coingeckoId": "RBTC",
+    "explorer": "https://explorer.rsk.co",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 324,
+    "key": "era",
+    "name": "zkSync",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.era.zksync.io",
+    "rpcList": [
+      "https://mainnet.era.zksync.io",
+      "https://zksync.drpc.org"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.zksync.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 33139,
+    "key": "ape",
+    "name": "Apechain",
+    "currency": "APE",
+    "decimals": 18,
+    "rpc": "https://rpc.apechain.com",
+    "rpcList": [
+      "https://rpc.apechain.com"
+    ],
+    "coingeckoId": "APE",
+    "explorer": "https://apescan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 34443,
+    "key": "mod",
+    "name": "Mode",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.mode.network",
+    "rpcList": [
+      "https://mainnet.mode.network",
+      "https://mode.drpc.org"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.mode.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 40,
+    "key": "tlo",
+    "name": "Telos",
+    "currency": "TLOS",
+    "decimals": 18,
+    "rpc": "https://rpc.telos.net",
+    "rpcList": [
+      "https://rpc.telos.net",
+      "https://telos.drpc.org"
+    ],
+    "coingeckoId": "TLOS",
+    "explorer": "https://teloscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 421614,
+    "key": "arbs",
+    "name": "Arbitrum Sepolia Testnet",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://sepolia-rollup.arbitrum.io/rpc",
+    "rpcList": [
+      "https://sepolia-rollup.arbitrum.io/rpc",
+      "https://arbitrum-sepolia-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://sepolia.arbiscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 4217,
+    "key": "tem",
+    "name": "Tempo",
+    "currency": "PathUSD",
+    "decimals": 6,
+    "rpc": "https://rpc.mainnet.tempo.xyz",
+    "rpcList": [
+      "https://rpc.mainnet.tempo.xyz"
+    ],
+    "coingeckoId": "PathUSD",
+    "explorer": "https://explore.tempo.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 42170,
+    "key": "arn",
+    "name": "Arbitrum Nova",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://nova.arbitrum.io/rpc",
+    "rpcList": [
+      "https://nova.arbitrum.io/rpc",
+      "https://arbitrum-nova-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://nova-explorer.arbitrum.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 42220,
+    "key": "cel",
+    "name": "Celo",
+    "currency": "CELO",
+    "decimals": 18,
+    "rpc": "https://forno.celo.org",
+    "rpcList": [
+      "https://forno.celo.org",
+      "https://celo-rpc.publicnode.com"
+    ],
+    "coingeckoId": "CELO",
+    "explorer": "https://celoscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 42793,
+    "key": "etl",
+    "name": "Etherlink",
+    "currency": "XTZ",
+    "decimals": 18,
+    "rpc": "https://node.mainnet.etherlink.com",
+    "rpcList": [
+      "https://node.mainnet.etherlink.com"
+    ],
+    "coingeckoId": "XTZ",
+    "explorer": "https://explorer.etherlink.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 43111,
+    "key": "hmi",
+    "name": "Hemi",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.hemi.network/rpc",
+    "rpcList": [
+      "https://rpc.hemi.network/rpc"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.hemi.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 4326,
+    "key": "meg",
+    "name": "MegaETH",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.megaeth.com/rpc",
+    "rpcList": [
+      "https://mainnet.megaeth.com/rpc"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://mega.etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 480,
+    "key": "wcc",
+    "name": "World Chain",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://worldchain-mainnet.g.alchemy.com/public",
+    "rpcList": [
+      "https://worldchain-mainnet.g.alchemy.com/public",
+      "https://480.rpc.thirdweb.com",
+      "https://worldchain-mainnet.gateway.tenderly.co"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://worldscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 50,
+    "key": "xdc",
+    "name": "XDC",
+    "currency": "XDC",
+    "decimals": 18,
+    "rpc": "https://erpc.xinfin.network",
+    "rpcList": [
+      "https://erpc.xinfin.network",
+      "https://rpc.xinfin.network",
+      "https://rpc1.xinfin.network",
+      "https://rpc.xdcrpc.com"
+    ],
+    "coingeckoId": "XDC",
+    "explorer": "https://xdcscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 5000,
+    "key": "mnt",
+    "name": "Mantle",
+    "currency": "MNT",
+    "decimals": 18,
+    "rpc": "https://rpc.mantle.xyz",
+    "rpcList": [
+      "https://rpc.mantle.xyz",
+      "https://mantle-rpc.publicnode.com"
+    ],
+    "coingeckoId": "MNT",
+    "explorer": "https://mantlescan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 5031,
+    "key": "som",
+    "name": "Somnia",
+    "currency": "SOMI",
+    "decimals": 18,
+    "rpc": "https://api.infra.mainnet.somnia.network",
+    "rpcList": [
+      "https://api.infra.mainnet.somnia.network"
+    ],
+    "coingeckoId": "SOMI",
+    "explorer": "https://explorer.somnia.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 5042,
+    "key": "arc",
+    "name": "Arc",
+    "currency": "USDC",
+    "decimals": 6,
+    "rpc": "https://rpc.mainnet.arc.io",
+    "rpcList": [
+      "https://rpc.mainnet.arc.io",
+      "https://rpc.blockdaemon.mainnet.arc.io",
+      "https://rpc.drpc.mainnet.arc.io",
+      "https://rpc.quicknode.mainnet.arc.io"
+    ],
+    "coingeckoId": "USDC",
+    "explorer": "https://explorer.arc.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 5042002,
+    "key": "arct",
+    "name": "Arc Testnet",
+    "currency": "USDC",
+    "decimals": 6,
+    "rpc": "https://rpc.testnet.arc.network",
+    "rpcList": [
+      "https://rpc.testnet.arc.network",
+      "https://rpc.quicknode.testnet.arc.network",
+      "https://rpc.blockdaemon.testnet.arc.network",
+      "https://arc-testnet.drpc.org"
+    ],
+    "coingeckoId": "USDC",
+    "explorer": "https://testnet.arcscan.app",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 534352,
+    "key": "scl",
+    "name": "Scroll",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.scroll.io",
+    "rpcList": [
+      "https://rpc.scroll.io",
+      "https://rpc.ankr.com/scroll",
+      "https://scroll-mainnet.chainstacklabs.com",
+      "https://scroll-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://scrollscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 57073,
+    "key": "ink",
+    "name": "Ink",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc-gel.inkonchain.com",
+    "rpcList": [
+      "https://rpc-gel.inkonchain.com",
+      "https://rpc-qnd.inkonchain.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.inkonchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 59144,
+    "key": "lna",
+    "name": "Linea",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.linea.build",
+    "rpcList": [
+      "https://rpc.linea.build",
+      "https://linea-rpc.publicnode.com",
+      "https://linea-rpc.blockreq.com/v1/rpc/public"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://lineascan.build",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 60808,
+    "key": "boc",
+    "name": "BOB",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.gobob.xyz",
+    "rpcList": [
+      "https://rpc.gobob.xyz",
+      "https://bob-mainnet.public.blastapi.io"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://explorer.gobob.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 747,
+    "key": "flw",
+    "name": "Flow",
+    "currency": "FLOW",
+    "decimals": 18,
+    "rpc": "https://mainnet.evm.nodes.onflow.org",
+    "rpcList": [
+      "https://mainnet.evm.nodes.onflow.org"
+    ],
+    "coingeckoId": "FLOW",
+    "explorer": "https://evm.flowscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 747474,
+    "key": "kat",
+    "name": "Katana",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.katana.network",
+    "rpcList": [
+      "https://rpc.katana.network",
+      "https://katana.gateway.tenderly.co/",
+      "https://rpc.katanarpc.com/"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://katanascan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 80094,
+    "key": "ber",
+    "name": "Berachain",
+    "currency": "BERA",
+    "decimals": 18,
+    "rpc": "https://rpc.berachain.com",
+    "rpcList": [
+      "https://rpc.berachain.com",
+      "https://berachain-rpc.publicnode.com",
+      "https://rpc.berachain-apis.com"
+    ],
+    "coingeckoId": "BERA",
+    "explorer": "https://berascan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 81457,
+    "key": "bls",
+    "name": "Blast",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.blast.io",
+    "rpcList": [
+      "https://rpc.blast.io",
+      "https://rpc.ankr.com/blast",
+      "https://blast.din.dev/rpc",
+      "https://blastl2-mainnet.public.blastapi.io"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://blastscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 8217,
+    "key": "kai",
+    "name": "Kaia",
+    "currency": "KAIA",
+    "decimals": 18,
+    "rpc": "https://public-en.node.kaia.io",
+    "rpcList": [
+      "https://public-en.node.kaia.io"
+    ],
+    "coingeckoId": "KAIA",
+    "explorer": "https://kaiascan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 84532,
+    "key": "bast",
+    "name": "Base Sepolia Testnet",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://sepolia.base.org",
+    "rpcList": [
+      "https://sepolia.base.org",
+      "https://base-sepolia-rpc.publicnode.com"
+    ],
+    "coingeckoId": "ETH",
+    "explorer": "https://sepolia.basescan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 88,
+    "key": "vic",
+    "name": "Viction",
+    "currency": "VIC",
+    "decimals": 18,
+    "rpc": "https://rpc.viction.xyz",
+    "rpcList": [
+      "https://rpc.viction.xyz"
+    ],
+    "coingeckoId": "VIC",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 9745,
+    "key": "pla",
+    "name": "Plasma",
+    "currency": "XPL",
+    "decimals": 18,
+    "rpc": "https://rpc.plasma.to",
+    "rpcList": [
+      "https://rpc.plasma.to"
+    ],
+    "coingeckoId": "XPL",
+    "explorer": "https://plasmascan.to",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 988,
+    "key": "sta",
+    "name": "Stable",
+    "currency": "USDT0",
+    "decimals": 6,
+    "rpc": "https://rpc.stable.xyz",
+    "rpcList": [
+      "https://rpc.stable.xyz"
+    ],
+    "coingeckoId": "USDT0",
+    "explorer": "https://stablescan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 98866,
+    "key": "plu",
+    "name": "Plume",
+    "currency": "PLUME",
+    "decimals": 18,
+    "rpc": "https://rpc.plume.org",
+    "rpcList": [
+      "https://rpc.plume.org"
+    ],
+    "coingeckoId": "PLU",
+    "explorer": "https://explorer.plume.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": true,
+    "category": "L2/Rollup"
+  },
+  {
+    "chainId": 1284,
+    "key": "mbeam",
+    "name": "Moonbeam",
+    "currency": "GLMR",
+    "decimals": 18,
+    "rpc": "https://rpc.api.moonbeam.network",
+    "rpcList": [
+      "https://rpc.api.moonbeam.network",
+      "https://moonbeam.public.blastapi.io",
+      "https://moonbeam.api.onfinality.io/public",
+      "https://moonbeam.unitedbloc.com"
+    ],
+    "coingeckoId": "moonbeam",
+    "explorer": "https://moonbeam.subscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 21000000,
+    "key": "corn",
+    "name": "Corn",
+    "currency": "BTCN",
+    "decimals": 18,
+    "rpc": "https://mainnet.corn-rpc.com",
+    "rpcList": [
+      "https://mainnet.corn-rpc.com",
+      "https://rpc.ankr.com/corn_maizenet",
+      "https://maizenet-rpc.usecorn.com"
+    ],
+    "coingeckoId": "corn-3",
+    "explorer": "https://cornscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1666600000,
+    "key": "hmy-s0",
+    "name": "Harmony",
+    "currency": "ONE",
+    "decimals": 18,
+    "rpc": "https://api.harmony.one",
+    "rpcList": [
+      "https://api.harmony.one",
+      "https://a.api.s0.t.hmny.io",
+      "https://api.s0.t.hmny.io",
+      "https://rpc.ankr.com/harmony"
+    ],
+    "coingeckoId": "harmony",
+    "explorer": "https://explorer.harmony.one",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 239,
+    "key": "tacchain_239-1",
+    "name": "TAC",
+    "currency": "TAC",
+    "decimals": 18,
+    "rpc": "https://rpc.tac.build",
+    "rpcList": [
+      "https://rpc.tac.build",
+      "https://rpc.ankr.com/tac",
+      "https://ws.rpc.tac.build"
+    ],
+    "coingeckoId": "tac",
+    "explorer": "https://explorer.tac.build",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1313161554,
+    "key": "aurora",
+    "name": "Aurora",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.aurora.dev",
+    "rpcList": [
+      "https://mainnet.aurora.dev",
+      "https://aurora.drpc.org"
+    ],
+    "coingeckoId": "aurora-near",
+    "explorer": "https://explorer.aurora.dev",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 167000,
+    "key": "tko-mainnet",
+    "name": "Taiko",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.taiko.xyz",
+    "rpcList": [
+      "https://rpc.mainnet.taiko.xyz",
+      "https://taiko-rpc.publicnode.com"
+    ],
+    "coingeckoId": "taiko",
+    "explorer": "https://taikoscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 250,
+    "key": "ftm",
+    "name": "Fantom",
+    "currency": "FTM",
+    "decimals": 18,
+    "rpc": "https://rpc.ftm.tools",
+    "rpcList": [
+      "https://rpc.ftm.tools",
+      "https://fantom-rpc.publicnode.com"
+    ],
+    "coingeckoId": "fantom",
+    "explorer": "https://ftmscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1285,
+    "key": "mriver",
+    "name": "Moonriver",
+    "currency": "MOVR",
+    "decimals": 18,
+    "rpc": "https://rpc.api.moonriver.moonbeam.network",
+    "rpcList": [
+      "https://rpc.api.moonriver.moonbeam.network",
+      "https://moonriver.public.blastapi.io",
+      "https://moonriver.api.onfinality.io/public",
+      "https://moonriver.unitedbloc.com"
+    ],
+    "coingeckoId": "moonriver",
+    "explorer": "https://moonriver.subscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 128,
+    "key": "heco",
+    "name": "Heco",
+    "currency": "HT",
+    "decimals": 18,
+    "rpc": "https://http-mainnet.hecochain.com",
+    "rpcList": [
+      "https://http-mainnet.hecochain.com"
+    ],
+    "coingeckoId": "huobi-token",
+    "explorer": "https://hecoinfo.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1101,
+    "key": "zkevm",
+    "name": "Polygon zkEVM",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://zkevm-rpc.com",
+    "rpcList": [
+      "https://zkevm-rpc.com",
+      "https://polygon-zkevm.drpc.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://zkevm.polygonscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 108,
+    "key": "TT",
+    "name": "ThunderCore",
+    "currency": "TT",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.thundercore.com",
+    "rpcList": [
+      "https://mainnet-rpc.thundercore.com",
+      "https://mainnet-rpc.thundertoken.net",
+      "https://mainnet-rpc.thundercore.io"
+    ],
+    "coingeckoId": "thunder-token",
+    "explorer": "https://viewblock.io/thundercore",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 66,
+    "key": "okt",
+    "name": "OKExChain",
+    "currency": "OKT",
+    "decimals": 18,
+    "rpc": "https://exchainrpc.okex.org",
+    "rpcList": [
+      "https://exchainrpc.okex.org",
+      "https://okc-mainnet.gateway.pokt.network/v1/lb/6275309bea1b320039c893ff"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://www.oklink.com/en/okc",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7000,
+    "key": "zetachain-mainnet",
+    "name": "ZetaChain",
+    "currency": "ZETA",
+    "decimals": 18,
+    "rpc": "https://zetachain-evm.blockpi.network/v1/rpc/public",
+    "rpcList": [
+      "https://zetachain-evm.blockpi.network/v1/rpc/public",
+      "https://zetachain-mainnet.g.allthatnode.com/archive/evm",
+      "https://zeta-chain.drpc.org",
+      "https://zetachain-mainnet.public.blastapi.io"
+    ],
+    "coingeckoId": "zetachain",
+    "explorer": "https://zetascan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 11297108109,
+    "key": "palm",
+    "name": "Palm",
+    "currency": "PALM",
+    "decimals": 18,
+    "rpc": "https://palm-mainnet.public.blastapi.io",
+    "rpcList": [
+      "https://palm-mainnet.public.blastapi.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://palm.chainlens.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 314,
+    "key": "filecoin",
+    "name": "Filecoin",
+    "currency": "FIL",
+    "decimals": 18,
+    "rpc": "https://api.node.glif.io/rpc/v1",
+    "rpcList": [
+      "https://api.node.glif.io/rpc/v1",
+      "https://api.node.glif.io/",
+      "https://rpc.ankr.com/filecoin",
+      "https://filecoin-mainnet.chainstacklabs.com/rpc/v1"
+    ],
+    "coingeckoId": "filecoin",
+    "explorer": "https://filfox.info/en",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 199,
+    "key": "BTT",
+    "name": "Bittorrent",
+    "currency": "BTT",
+    "decimals": 18,
+    "rpc": "https://rpc.bittorrentchain.io",
+    "rpcList": [
+      "https://rpc.bittorrentchain.io",
+      "https://rpc.bt.io",
+      "https://bittorrent.drpc.org"
+    ],
+    "coingeckoId": "bittorrent",
+    "explorer": "https://bttcscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 106,
+    "key": "vlx",
+    "name": "Velas",
+    "currency": "VLX",
+    "decimals": 18,
+    "rpc": "https://evmexplorer.velas.com/rpc",
+    "rpcList": [
+      "https://evmexplorer.velas.com/rpc",
+      "https://explorer.velas.com/rpc"
+    ],
+    "coingeckoId": "velas",
+    "explorer": "https://evmexplorer.velas.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 42262,
+    "key": "emerald",
+    "name": "Oasis",
+    "currency": "ROSE",
+    "decimals": 18,
+    "rpc": "https://emerald.oasis.io",
+    "rpcList": [
+      "https://emerald.oasis.io"
+    ],
+    "coingeckoId": "oasis-network",
+    "explorer": "https://explorer.oasis.io/mainnet/emerald",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 169,
+    "key": "manta",
+    "name": "Manta",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://pacific-rpc.manta.network/http",
+    "rpcList": [
+      "https://pacific-rpc.manta.network/http",
+      "https://manta-pacific.drpc.org"
+    ],
+    "coingeckoId": "manta-network",
+    "explorer": "https://pacific-explorer.manta.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 177,
+    "key": "hsk",
+    "name": "HashKey Chain",
+    "currency": "HSK",
+    "decimals": 18,
+    "rpc": "https://mainnet.hsk.xyz",
+    "rpcList": [
+      "https://mainnet.hsk.xyz"
+    ],
+    "coingeckoId": "hashkey-ecopoints",
+    "explorer": "https://hsk.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 48900,
+    "key": "zircuit-mainnet",
+    "name": "Zircuit",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.zircuit.com",
+    "rpcList": [
+      "https://mainnet.zircuit.com"
+    ],
+    "coingeckoId": "zircuit",
+    "explorer": "https://explorer.zircuit.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 61,
+    "key": "etc",
+    "name": "EthereumClassic",
+    "currency": "ETC",
+    "decimals": 18,
+    "rpc": "https://etc.rivet.link",
+    "rpcList": [
+      "https://etc.rivet.link",
+      "https://besu-at.etc-network.info",
+      "https://geth-at.etc-network.info",
+      "https://etc.etcdesktop.com"
+    ],
+    "coingeckoId": "ethereum-classic",
+    "explorer": "https://etc.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 321,
+    "key": "kcs",
+    "name": "Kucoin",
+    "currency": "KCS",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet.kcc.network",
+    "rpcList": [
+      "https://rpc-mainnet.kcc.network",
+      "https://kcc.mytokenpocket.vip",
+      "https://public-rpc.blockpi.io/http/kcc"
+    ],
+    "coingeckoId": "kucoin-shares",
+    "explorer": "https://explorer.kcc.io/en",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4689,
+    "key": "iotex-mainnet",
+    "name": "IoTeX",
+    "currency": "IOTX",
+    "decimals": 18,
+    "rpc": "https://babel-api.mainnet.iotex.io",
+    "rpcList": [
+      "https://babel-api.mainnet.iotex.io"
+    ],
+    "coingeckoId": "iotex",
+    "explorer": "https://iotexscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 888,
+    "key": "wan",
+    "name": "Wanchain",
+    "currency": "WAN",
+    "decimals": 18,
+    "rpc": "https://gwan-ssl.wandevs.org:56891/",
+    "rpcList": [
+      "https://gwan-ssl.wandevs.org:56891/"
+    ],
+    "coingeckoId": "wanchain",
+    "explorer": "https://wanscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 58,
+    "key": "OntologyMainnet",
+    "name": "OntologyEVM",
+    "currency": "ONG",
+    "decimals": 18,
+    "rpc": "https://dappnode1.ont.io:10339",
+    "rpcList": [
+      "https://dappnode1.ont.io:10339",
+      "https://dappnode2.ont.io:10339",
+      "https://dappnode3.ont.io:10339",
+      "https://dappnode4.ont.io:10339"
+    ],
+    "coingeckoId": "ontology",
+    "explorer": "https://explorer.ont.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 592,
+    "key": "astr",
+    "name": "Astar",
+    "currency": "ASTR",
+    "decimals": 18,
+    "rpc": "https://evm.astar.network",
+    "rpcList": [
+      "https://evm.astar.network",
+      "https://astar.public.blastapi.io",
+      "https://1rpc.io/astr"
+    ],
+    "coingeckoId": "astar",
+    "explorer": "https://astar.subscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 39797,
+    "key": "nrg",
+    "name": "Energi",
+    "currency": "NRG",
+    "decimals": 18,
+    "rpc": "https://nodeapi.energi.network",
+    "rpcList": [
+      "https://nodeapi.energi.network"
+    ],
+    "coingeckoId": "energi",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 19,
+    "key": "sgb",
+    "name": "Songbird",
+    "currency": "SGB",
+    "decimals": 18,
+    "rpc": "https://songbird-api.flare.network/ext/C/rpc",
+    "rpcList": [
+      "https://songbird-api.flare.network/ext/C/rpc",
+      "https://01-gravelines-006-01.rpc.tatum.io/ext/bc/C/rpc",
+      "https://01-vinthill-006-02.rpc.tatum.io/ext/bc/C/rpc",
+      "https://02-tokyo-006-03.rpc.tatum.io/ext/bc/C/rpc"
+    ],
+    "coingeckoId": "songbird",
+    "explorer": "https://songbird-explorer.flare.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 295,
+    "key": "hedera-mainnet",
+    "name": "Hedera",
+    "currency": "HBAR",
+    "decimals": 18,
+    "rpc": "https://mainnet.hashio.io/api",
+    "rpcList": [
+      "https://mainnet.hashio.io/api",
+      "https://hedera.linkpool.pro"
+    ],
+    "coingeckoId": "hedera-hashgraph",
+    "explorer": "https://explorer.arkhia.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5464,
+    "key": "sagaevm",
+    "name": "Saga",
+    "currency": "GAS",
+    "decimals": 18,
+    "rpc": "https://sagaevm.jsonrpc.sagarpc.io",
+    "rpcList": [
+      "https://sagaevm.jsonrpc.sagarpc.io"
+    ],
+    "coingeckoId": "saga-2",
+    "explorer": "https://sagaevm.sagaexplorer.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 111188,
+    "key": "re-al",
+    "name": "re.al",
+    "currency": "reETH",
+    "decimals": 18,
+    "rpc": "https://rpc.realforreal.gelato.digital",
+    "rpcList": [
+      "https://rpc.realforreal.gelato.digital",
+      "https://tangible-real.gateway.tenderly.co",
+      "https://real.drpc.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.re.al",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1818,
+    "key": "cube",
+    "name": "Cube",
+    "currency": "CUBE",
+    "decimals": 18,
+    "rpc": "https://http-mainnet.cube.network",
+    "rpcList": [
+      "https://http-mainnet.cube.network",
+      "https://http-mainnet-sg.cube.network",
+      "https://http-mainnet-us.cube.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://cubescan.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 32520,
+    "key": "Brise",
+    "name": "Bitgert",
+    "currency": "Brise",
+    "decimals": 18,
+    "rpc": "https://rpc-bitgert.icecreamswap.com",
+    "rpcList": [
+      "https://rpc-bitgert.icecreamswap.com",
+      "https://mainnet-rpc.brisescan.com",
+      "https://chainrpc.com",
+      "https://serverrpc.com"
+    ],
+    "coingeckoId": "bitrise-token",
+    "explorer": "https://brisescan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 47805,
+    "key": "REI",
+    "name": "REI",
+    "currency": "REI",
+    "decimals": 18,
+    "rpc": "https://rpc.rei.network",
+    "rpcList": [
+      "https://rpc.rei.network"
+    ],
+    "coingeckoId": "rei-network",
+    "explorer": "https://scan.rei.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 20,
+    "key": "esc",
+    "name": "Elastos",
+    "currency": "ELA",
+    "decimals": 18,
+    "rpc": "https://api.elastos.io/eth",
+    "rpcList": [
+      "https://api.elastos.io/eth"
+    ],
+    "coingeckoId": "elastos",
+    "explorer": "https://esc.elastos.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8822,
+    "key": "iotaevm",
+    "name": "IOTA EVM",
+    "currency": "IOTA",
+    "decimals": 18,
+    "rpc": "https://json-rpc.evm.iotaledger.net",
+    "rpcList": [
+      "https://json-rpc.evm.iotaledger.net"
+    ],
+    "coingeckoId": "iota",
+    "explorer": "https://explorer.evm.iota.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 70,
+    "key": "hsc",
+    "name": "Hoo",
+    "currency": "HOO",
+    "decimals": 18,
+    "rpc": "https://http-mainnet.hoosmartchain.com",
+    "rpcList": [
+      "https://http-mainnet.hoosmartchain.com",
+      "https://http-mainnet2.hoosmartchain.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://www.hooscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 35441,
+    "key": "q",
+    "name": "Q Protocol",
+    "currency": "QGOV",
+    "decimals": 18,
+    "rpc": "https://rpc.q.org",
+    "rpcList": [
+      "https://rpc.q.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.q.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 245022934,
+    "key": "neonevm-mainnet",
+    "name": "Neon",
+    "currency": "NEON",
+    "decimals": 18,
+    "rpc": "https://neon-proxy-mainnet.solana.p2p.org",
+    "rpcList": [
+      "https://neon-proxy-mainnet.solana.p2p.org",
+      "https://neon-evm.drpc.org"
+    ],
+    "coingeckoId": "neon",
+    "explorer": "https://neonscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 82,
+    "key": "Meter",
+    "name": "Meter",
+    "currency": "MTR",
+    "decimals": 18,
+    "rpc": "https://rpc.meter.io",
+    "rpcList": [
+      "https://rpc.meter.io"
+    ],
+    "coingeckoId": "meter",
+    "explorer": "https://scan.meter.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1024,
+    "key": "clv",
+    "name": "CLV",
+    "currency": "CLV",
+    "decimals": 18,
+    "rpc": "https://api-para.clover.finance",
+    "rpcList": [
+      "https://api-para.clover.finance"
+    ],
+    "coingeckoId": "clover-finance",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 336,
+    "key": "sdn",
+    "name": "Shiden",
+    "currency": "SDN",
+    "decimals": 18,
+    "rpc": "https://shiden.api.onfinality.io/public",
+    "rpcList": [
+      "https://shiden.api.onfinality.io/public",
+      "https://shiden.public.blastapi.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://shiden.subscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 246,
+    "key": "ewt",
+    "name": "EnergyWeb",
+    "currency": "EWT",
+    "decimals": 18,
+    "rpc": "https://rpc.energyweb.org",
+    "rpcList": [
+      "https://rpc.energyweb.org"
+    ],
+    "coingeckoId": "energy-web-token",
+    "explorer": "https://explorer.energyweb.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 60,
+    "key": "go",
+    "name": "GoChain",
+    "currency": "GO",
+    "decimals": 18,
+    "rpc": "https://rpc.gochain.io",
+    "rpcList": [
+      "https://rpc.gochain.io"
+    ],
+    "coingeckoId": "gochain",
+    "explorer": "https://explorer.gochain.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 269,
+    "key": "hpb",
+    "name": "HPB",
+    "currency": "HPB",
+    "decimals": 18,
+    "rpc": "https://hpbnode.com",
+    "rpcList": [
+      "https://hpbnode.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://hscan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 32659,
+    "key": "fsn",
+    "name": "Fusion",
+    "currency": "FSN",
+    "decimals": 18,
+    "rpc": "https://mainnet.fusionnetwork.io",
+    "rpcList": [
+      "https://mainnet.fusionnetwork.io"
+    ],
+    "coingeckoId": "fsn",
+    "explorer": "https://fsnscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2001,
+    "key": "milkAda",
+    "name": "Milkomeda",
+    "currency": "mADA",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet-cardano-evm.c1.milkomeda.com",
+    "rpcList": [
+      "https://rpc-mainnet-cardano-evm.c1.milkomeda.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer-mainnet-cardano-evm.c1.milkomeda.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 10000,
+    "key": "smartbch",
+    "name": "smartBCH",
+    "currency": "BCH",
+    "decimals": 18,
+    "rpc": "https://smartbch.greyh.at",
+    "rpcList": [
+      "https://smartbch.greyh.at",
+      "https://rpc-mainnet.smartbch.org",
+      "https://smartbch.fountainhead.cash/mainnet"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 333999,
+    "key": "olympus",
+    "name": "Polis",
+    "currency": "POLIS",
+    "decimals": 18,
+    "rpc": "https://rpc.polis.tech",
+    "rpcList": [
+      "https://rpc.polis.tech"
+    ],
+    "coingeckoId": "polis",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 55,
+    "key": "ZYX",
+    "name": "ZYX",
+    "currency": "ZYX",
+    "decimals": 18,
+    "rpc": "https://rpc-1.zyx.network/",
+    "rpcList": [
+      "https://rpc-1.zyx.network/",
+      "https://rpc-2.zyx.network/",
+      "https://rpc-3.zyx.network/",
+      "https://rpc-4.zyx.network/"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://zyxscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 6900,
+    "key": "cataclysm-1",
+    "name": "Nibiru",
+    "currency": "NIBI",
+    "decimals": 18,
+    "rpc": "https://evm-rpc.nibiru.fi",
+    "rpcList": [
+      "https://evm-rpc.nibiru.fi"
+    ],
+    "coingeckoId": "nibiru",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8,
+    "key": "ctm",
+    "name": "Ubiq",
+    "currency": "CTM",
+    "decimals": 18,
+    "rpc": "https://rpc.c8ntinuum.com",
+    "rpcList": [
+      "https://rpc.c8ntinuum.com",
+      "https://rpc.c8ntinuum.io",
+      "https://rpc.c8ntinuum.link"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://ctmscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 71402,
+    "key": "gw-mainnet-v1",
+    "name": "GodwokenV1",
+    "currency": "pCKB",
+    "decimals": 18,
+    "rpc": "https://v1.mainnet.godwoken.io/rpc",
+    "rpcList": [
+      "https://v1.mainnet.godwoken.io/rpc"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://v1.gwscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 820,
+    "key": "clo",
+    "name": "Callisto",
+    "currency": "CLO",
+    "decimals": 18,
+    "rpc": "https://rpc.callistodao.org",
+    "rpcList": [
+      "https://rpc.callistodao.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.callistodao.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 52,
+    "key": "cet",
+    "name": "CSC",
+    "currency": "cet",
+    "decimals": 18,
+    "rpc": "https://rpc.coinex.net",
+    "rpcList": [
+      "https://rpc.coinex.net"
+    ],
+    "coingeckoId": "coinex-token",
+    "explorer": "https://www.coinex.net",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2525,
+    "key": "inevm",
+    "name": "inEVM",
+    "currency": "INJ",
+    "decimals": 18,
+    "rpc": "https://mainnet.rpc.inevm.com/http",
+    "rpcList": [
+      "https://mainnet.rpc.inevm.com/http"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5551,
+    "key": "Nahmii",
+    "name": "Nahmii",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://l2.nahmii.io",
+    "rpcList": [
+      "https://l2.nahmii.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.n2.nahmii.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 361,
+    "key": "theta-mainnet",
+    "name": "Theta",
+    "currency": "TFUEL",
+    "decimals": 18,
+    "rpc": "https://eth-rpc-api.thetatoken.org/rpc",
+    "rpcList": [
+      "https://eth-rpc-api.thetatoken.org/rpc"
+    ],
+    "coingeckoId": "theta-token",
+    "explorer": "https://explorer.thetatoken.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 57,
+    "key": "sys",
+    "name": "Syscoin",
+    "currency": "SYS",
+    "decimals": 18,
+    "rpc": "https://rpc.syscoin.org",
+    "rpcList": [
+      "https://rpc.syscoin.org",
+      "https://syscoin.public-rpc.com",
+      "https://57.rpc.thirdweb.com",
+      "https://syscoin-evm.publicnode.com"
+    ],
+    "coingeckoId": "syscoin",
+    "explorer": "https://explorer.syscoin.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 388,
+    "key": "zkCRO",
+    "name": "Cronos zkEVM",
+    "currency": "zkCRO",
+    "decimals": 18,
+    "rpc": "https://mainnet.zkevm.cronos.org",
+    "rpcList": [
+      "https://mainnet.zkevm.cronos.org"
+    ],
+    "coingeckoId": "cronos-zkevm-cro",
+    "explorer": "https://explorer.zkevm.cronos.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 810180,
+    "key": "zklink-nova",
+    "name": "zkLink",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.zklink.io",
+    "rpcList": [
+      "https://rpc.zklink.io"
+    ],
+    "coingeckoId": "zklink",
+    "explorer": "https://explorer.zklink.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2345,
+    "key": "goat",
+    "name": "Goat",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://rpc.goat.network",
+    "rpcList": [
+      "https://rpc.goat.network"
+    ],
+    "coingeckoId": "goat-network",
+    "explorer": "https://explorer.goat.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 9,
+    "key": "quai",
+    "name": "Quai",
+    "currency": "QUAI",
+    "decimals": 18,
+    "rpc": "https://rpc.quai.network/cyprus1",
+    "rpcList": [
+      "https://rpc.quai.network/cyprus1"
+    ],
+    "coingeckoId": "quai-network",
+    "explorer": "https://quaiscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 53935,
+    "key": "DFK",
+    "name": "DFK",
+    "currency": "JEWEL",
+    "decimals": 18,
+    "rpc": "https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc",
+    "rpcList": [
+      "https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc"
+    ],
+    "coingeckoId": "defi-kingdoms",
+    "explorer": "https://explorer.dfkchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7777777,
+    "key": "zora",
+    "name": "Zora",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.zora.energy/",
+    "rpcList": [
+      "https://rpc.zora.energy/"
+    ],
+    "coingeckoId": "zora",
+    "explorer": "https://explorer.zora.energy",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2002,
+    "key": "milkALGO",
+    "name": "Milkomeda A1",
+    "currency": "mALGO",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet-algorand-rollup.a1.milkomeda.com",
+    "rpcList": [
+      "https://rpc-mainnet-algorand-rollup.a1.milkomeda.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer-mainnet-algorand-rollup.a1.milkomeda.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2152,
+    "key": "fra",
+    "name": "Findora",
+    "currency": "FRA",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet.findora.org",
+    "rpcList": [
+      "https://rpc-mainnet.findora.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://evm.findorascan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 225,
+    "key": "LA",
+    "name": "Lachain",
+    "currency": "LA",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet.lachain.io",
+    "rpcList": [
+      "https://rpc-mainnet.lachain.io"
+    ],
+    "coingeckoId": "latoken",
+    "explorer": "https://scan.lachain.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 55555,
+    "key": "reichain",
+    "name": "REIchain",
+    "currency": "REI",
+    "decimals": 18,
+    "rpc": "https://rei-rpc.moonrhythm.io",
+    "rpcList": [
+      "https://rei-rpc.moonrhythm.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://reiscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 153153,
+    "key": "Odyssey",
+    "name": "Odyssey",
+    "currency": "DIONE",
+    "decimals": 18,
+    "rpc": "https://node.dioneprotocol.com/ext/bc/D/rpc",
+    "rpcList": [
+      "https://node.dioneprotocol.com/ext/bc/D/rpc"
+    ],
+    "coingeckoId": "dione",
+    "explorer": "https://odysseyscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 42,
+    "key": "lukso",
+    "name": "LUKSO",
+    "currency": "LYX",
+    "decimals": 18,
+    "rpc": "https://rpc.lukso.gateway.fm",
+    "rpcList": [
+      "https://rpc.lukso.gateway.fm",
+      "https://42.rpc.thirdweb.com",
+      "https://rpc.lukso.sigmacore.io",
+      "https://rpc.mainnet.lukso.network"
+    ],
+    "coingeckoId": "lukso-token-2",
+    "explorer": "https://explorer.lukso.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 87,
+    "key": "nnw",
+    "name": "Nova Network",
+    "currency": "SNT",
+    "decimals": 18,
+    "rpc": "https://connect.novanetwork.io",
+    "rpcList": [
+      "https://connect.novanetwork.io",
+      "https://0x57.redjackstudio.com",
+      "https://rpc.novanetwork.io:9070"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.novanetwork.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 255,
+    "key": "kroma",
+    "name": "Kroma",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://api.kroma.network",
+    "rpcList": [
+      "https://api.kroma.network",
+      "https://rpc-kroma.rockx.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://blockscout.kroma.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1231,
+    "key": "UtronMainnet",
+    "name": "Ultron",
+    "currency": "ULX",
+    "decimals": 18,
+    "rpc": "https://ultron-rpc.net",
+    "rpcList": [
+      "https://ultron-rpc.net"
+    ],
+    "coingeckoId": "ultron",
+    "explorer": "https://ulxscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 42766,
+    "key": "ZKFair-Mainnet",
+    "name": "Zkfair",
+    "currency": "USDC",
+    "decimals": 18,
+    "rpc": "https://rpc.zkfair.io",
+    "rpcList": [
+      "https://rpc.zkfair.io"
+    ],
+    "coingeckoId": "zkfair",
+    "explorer": "https://scan.zkfair.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 6699,
+    "key": "ox-chain",
+    "name": "OXFUN",
+    "currency": "OX",
+    "decimals": 18,
+    "rpc": "https://rpc.oxscan.io",
+    "rpcList": [
+      "https://rpc.oxscan.io"
+    ],
+    "coingeckoId": "ox-fun",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 88888,
+    "key": "chzmainnet",
+    "name": "Chiliz",
+    "currency": "CHZ",
+    "decimals": 18,
+    "rpc": "https://rpc.chiliz.com",
+    "rpcList": [
+      "https://rpc.chiliz.com",
+      "https://rpc.ankr.com/chiliz",
+      "https://chiliz.publicnode.com"
+    ],
+    "coingeckoId": "chiliz",
+    "explorer": "https://chiliscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2716446429837000,
+    "key": "dchainmainnet",
+    "name": "DChain",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://dchain-2716446429837000-1.jsonrpc.sagarpc.io",
+    "rpcList": [
+      "https://dchain-2716446429837000-1.jsonrpc.sagarpc.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://dchain-2716446429837000-1.sagaexplorer.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 888888888,
+    "key": "ancient8",
+    "name": "Ancient8",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.ancient8.gg",
+    "rpcList": [
+      "https://rpc.ancient8.gg"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.ancient8.gg",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 96,
+    "key": "kub",
+    "name": "Bitkub",
+    "currency": "KUB",
+    "decimals": 18,
+    "rpc": "https://rpc.bitkubchain.io",
+    "rpcList": [
+      "https://rpc.bitkubchain.io"
+    ],
+    "coingeckoId": "bitkub-coin",
+    "explorer": "https://kubscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 148,
+    "key": "shimmerevm",
+    "name": "ShimmerEVM",
+    "currency": "SMR",
+    "decimals": 18,
+    "rpc": "https://json-rpc.evm.shimmer.network",
+    "rpcList": [
+      "https://json-rpc.evm.shimmer.network"
+    ],
+    "coingeckoId": "shimmer",
+    "explorer": "https://explorer.evm.shimmer.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1890,
+    "key": "lightlink_phoenix",
+    "name": "LightLink",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://replicator.phoenix.lightlink.io/rpc/v1",
+    "rpcList": [
+      "https://replicator.phoenix.lightlink.io/rpc/v1"
+    ],
+    "coingeckoId": "lightlink",
+    "explorer": "https://phoenix.lightlink.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3637,
+    "key": "BTNX",
+    "name": "Botanix",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://rpc.botanixlabs.com",
+    "rpcList": [
+      "https://rpc.botanixlabs.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://botanixscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 420420,
+    "key": "KEK",
+    "name": "Kekchain",
+    "currency": "KEK",
+    "decimals": 18,
+    "rpc": "https://mainnet.kekchain.com",
+    "rpcList": [
+      "https://mainnet.kekchain.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://mainnet-explorer.kekchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3776,
+    "key": "astrzk",
+    "name": "Astar zkEVM",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.startale.com/astar-zkevm",
+    "rpcList": [
+      "https://rpc.startale.com/astar-zkevm"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://astar-zkevm.explorer.startale.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1380012617,
+    "key": "rari-mainnet",
+    "name": "Rari",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rari.calderachain.xyz/http",
+    "rpcList": [
+      "https://rari.calderachain.xyz/http"
+    ],
+    "coingeckoId": "rarible",
+    "explorer": "https://mainnet.explorer.rarichain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 55244,
+    "key": "spn",
+    "name": "Superposition",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.superposition.so",
+    "rpcList": [
+      "https://rpc.superposition.so"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.superposition.so",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1729,
+    "key": "reya",
+    "name": "Reya Network",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.reya.network",
+    "rpcList": [
+      "https://rpc.reya.network"
+    ],
+    "coingeckoId": "reya",
+    "explorer": "https://explorer.reya.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 41923,
+    "key": "edu-chain",
+    "name": "EDU Chain",
+    "currency": "EDU",
+    "decimals": 18,
+    "rpc": "https://rpc.edu-chain.raas.gelato.cloud",
+    "rpcList": [
+      "https://rpc.edu-chain.raas.gelato.cloud"
+    ],
+    "coingeckoId": "edu-coin",
+    "explorer": "https://educhain.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 432204,
+    "key": "dexalot",
+    "name": "Dexalot",
+    "currency": "ALOT",
+    "decimals": 18,
+    "rpc": "https://subnets.avax.network/dexalot/mainnet/rpc",
+    "rpcList": [
+      "https://subnets.avax.network/dexalot/mainnet/rpc"
+    ],
+    "coingeckoId": "dexalot",
+    "explorer": "https://subnets.avax.network/dexalot",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 44,
+    "key": "crab",
+    "name": "Crab",
+    "currency": "CRAB",
+    "decimals": 18,
+    "rpc": "https://crab-rpc.darwinia.network",
+    "rpcList": [
+      "https://crab-rpc.darwinia.network",
+      "https://crab-rpc.dcdao.box"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://crab-scan.darwinia.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 50104,
+    "key": "sophon",
+    "name": "Sophon",
+    "currency": "SOPH",
+    "decimals": 18,
+    "rpc": "https://rpc.sophon.xyz",
+    "rpcList": [
+      "https://rpc.sophon.xyz"
+    ],
+    "coingeckoId": "sophon",
+    "explorer": "https://explorer.sophon.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 777777,
+    "key": "winr",
+    "name": "WINR",
+    "currency": "WINR",
+    "decimals": 18,
+    "rpc": "https://rpc.winr.games",
+    "rpcList": [
+      "https://rpc.winr.games"
+    ],
+    "coingeckoId": "winr-protocol",
+    "explorer": "https://explorer.winr.games",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8008,
+    "key": "polynomial",
+    "name": "Polynomial",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.polynomial.fi",
+    "rpcList": [
+      "https://rpc.polynomial.fi"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://polynomialscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4488,
+    "key": "HYDRA",
+    "name": "Hydra Chain",
+    "currency": "HYDRA",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet.hydrachain.org",
+    "rpcList": [
+      "https://rpc-mainnet.hydrachain.org"
+    ],
+    "coingeckoId": "hydra",
+    "explorer": "https://skynet.hydrachain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1514,
+    "key": "data",
+    "name": "Story",
+    "currency": "DATA",
+    "decimals": 18,
+    "rpc": "https://mainnet.datarpc.io",
+    "rpcList": [
+      "https://mainnet.datarpc.io"
+    ],
+    "coingeckoId": "story-2",
+    "explorer": "https://datanetscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 964,
+    "key": "bittensor-evm-mainnet",
+    "name": "Bittensor EVM",
+    "currency": "TAO",
+    "decimals": 18,
+    "rpc": "https://lite.chain.opentensor.ai",
+    "rpcList": [
+      "https://lite.chain.opentensor.ai"
+    ],
+    "coingeckoId": "bittensor",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1923,
+    "key": "swellchain",
+    "name": "Swellchain",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://swell-mainnet.alt.technology",
+    "rpcList": [
+      "https://swell-mainnet.alt.technology",
+      "https://rpc.ankr.com/swell"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.swellnetwork.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 185,
+    "key": "mint",
+    "name": "Mint",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.mintchain.io",
+    "rpcList": [
+      "https://rpc.mintchain.io",
+      "https://global.rpc.mintchain.io",
+      "https://asia.rpc.mintchain.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.mintchain.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 200901,
+    "key": "btr",
+    "name": "Bitlayer",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://rpc.bitlayer.org",
+    "rpcList": [
+      "https://rpc.bitlayer.org",
+      "https://rpc.bitlayer-rpc.com",
+      "https://rpc.ankr.com/bitlayer",
+      "https://rpc-bitlayer.rockx.com"
+    ],
+    "coingeckoId": "bitlayer-bitvm",
+    "explorer": "https://www.btrscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5330,
+    "key": "sseed",
+    "name": "Superseed",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.superseed.xyz",
+    "rpcList": [
+      "https://mainnet.superseed.xyz"
+    ],
+    "coingeckoId": "superseed",
+    "explorer": "https://explorer.superseed.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 478,
+    "key": "formnetwork",
+    "name": "Form Network",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.form.network/http",
+    "rpcList": [
+      "https://rpc.form.network/http"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.form.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 841,
+    "key": "tara",
+    "name": "Taraxa",
+    "currency": "TARA",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.taraxa.io/",
+    "rpcList": [
+      "https://rpc.mainnet.taraxa.io/",
+      "https://ws.mainnet.taraxa.io"
+    ],
+    "coingeckoId": "taraxa",
+    "explorer": "https://tara.to",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 11820,
+    "key": "artela-mainnet",
+    "name": "Artela",
+    "currency": "ART",
+    "decimals": 18,
+    "rpc": "https://node-euro.artela.network/rpc",
+    "rpcList": [
+      "https://node-euro.artela.network/rpc"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://artscan.artela.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1424,
+    "key": "perennial",
+    "name": "Perennial",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.perennial.foundation",
+    "rpcList": [
+      "https://rpc.perennial.foundation"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.perennial.foundation",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4337,
+    "key": "beam",
+    "name": "Beam",
+    "currency": "BEAM",
+    "decimals": 18,
+    "rpc": "https://build.onbeam.com/rpc",
+    "rpcList": [
+      "https://build.onbeam.com/rpc",
+      "https://subnets.avax.network/beam/mainnet/rpc"
+    ],
+    "coingeckoId": "beam-2",
+    "explorer": "https://subnets.avax.network/beam",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 666666666,
+    "key": "degen-chain",
+    "name": "Degen",
+    "currency": "DEGEN",
+    "decimals": 18,
+    "rpc": "https://rpc.degen.tips",
+    "rpcList": [
+      "https://rpc.degen.tips"
+    ],
+    "coingeckoId": "degen-base",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 23294,
+    "key": "sapphire",
+    "name": "Sapphire",
+    "currency": "ROSE",
+    "decimals": 18,
+    "rpc": "https://oasis-sapphire.publicnode.com",
+    "rpcList": [
+      "https://oasis-sapphire.publicnode.com",
+      "https://sapphire.oasis.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.oasis.io/mainnet/sapphire",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 6001,
+    "key": "bouncebit-mainnet",
+    "name": "BounceBit",
+    "currency": "BB",
+    "decimals": 18,
+    "rpc": "https://fullnode-mainnet.bouncebitapi.com/",
+    "rpcList": [
+      "https://fullnode-mainnet.bouncebitapi.com/"
+    ],
+    "coingeckoId": "bouncebit",
+    "explorer": "https://bbscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2649,
+    "key": "ailayer-mainnet",
+    "name": "AILayer",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.ailayer.xyz",
+    "rpcList": [
+      "https://mainnet-rpc.ailayer.xyz"
+    ],
+    "coingeckoId": "ailayer-token",
+    "explorer": "https://mainnet-explorer.ailayer.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7200,
+    "key": "xsat",
+    "name": "exSat",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://evm.exsat.network",
+    "rpcList": [
+      "https://evm.exsat.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.exsat.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7560,
+    "key": "cyeth",
+    "name": "Cyber",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://cyber.alt.technology/",
+    "rpcList": [
+      "https://cyber.alt.technology/",
+      "https://rpc.cyber.co/"
+    ],
+    "coingeckoId": "cyberconnect",
+    "explorer": "https://cyberscan.co",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 9999999,
+    "key": "fluence",
+    "name": "Fluence",
+    "currency": "FLT",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.fluence.dev/",
+    "rpcList": [
+      "https://rpc.mainnet.fluence.dev/"
+    ],
+    "coingeckoId": "fluence-2",
+    "explorer": "https://blockscout.mainnet.fluence.dev",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 254,
+    "key": "Swan",
+    "name": "Swan",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.swanchain.org",
+    "rpcList": [
+      "https://mainnet-rpc.swanchain.org",
+      "https://mainnet-rpc-01.swanchain.org",
+      "https://mainnet-rpc-02.swanchain.org",
+      "https://mainnet-rpc-03.swanchain.org"
+    ],
+    "coingeckoId": "swan-chain",
+    "explorer": "https://swanscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 256256,
+    "key": "cmp-mainnet",
+    "name": "CMP",
+    "currency": "CMP",
+    "decimals": 18,
+    "rpc": "https://mainnet.block.caduceus.foundation",
+    "rpcList": [
+      "https://mainnet.block.caduceus.foundation"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://mainnet.scan.caduceus.foundation",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4114,
+    "key": "citrea",
+    "name": "Citrea",
+    "currency": "cBTC",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.citrea.xyz",
+    "rpcList": [
+      "https://rpc.mainnet.citrea.xyz"
+    ],
+    "coingeckoId": "citrea",
+    "explorer": "https://explorer.mainnet.citrea.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 16718,
+    "key": "airdao",
+    "name": "AirDAO",
+    "currency": "AMB",
+    "decimals": 18,
+    "rpc": "https://network.ambrosus.io",
+    "rpcList": [
+      "https://network.ambrosus.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://airdao.io/explorer",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7171,
+    "key": "bitrock",
+    "name": "Bitrock",
+    "currency": "BROCK",
+    "decimals": 18,
+    "rpc": "https://connect.bit-rock.io",
+    "rpcList": [
+      "https://connect.bit-rock.io",
+      "https://brockrpc.io"
+    ],
+    "coingeckoId": "bitrock",
+    "explorer": "https://brockscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 16116,
+    "key": "DFV",
+    "name": "DeFiVerse",
+    "currency": "OAS",
+    "decimals": 18,
+    "rpc": "https://rpc.defi-verse.org/",
+    "rpcList": [
+      "https://rpc.defi-verse.org/"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.defi-verse.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7070,
+    "key": "planq",
+    "name": "Planq",
+    "currency": "PLQ",
+    "decimals": 18,
+    "rpc": "https://evm-rpc.planq.network",
+    "rpcList": [
+      "https://evm-rpc.planq.network"
+    ],
+    "coingeckoId": "planq",
+    "explorer": "https://evm.planq.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 274,
+    "key": "lachain",
+    "name": "LaChain Network",
+    "currency": "LAC",
+    "decimals": 18,
+    "rpc": "https://rpc1.mainnet.lachain.network",
+    "rpcList": [
+      "https://rpc1.mainnet.lachain.network",
+      "https://rpc2.mainnet.lachain.network",
+      "https://lachain.rpc-nodes.cedalio.dev"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.lachain.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 648,
+    "key": "ace",
+    "name": "Endurance",
+    "currency": "ACE",
+    "decimals": 18,
+    "rpc": "https://rpc-endurance.fusionist.io/",
+    "rpcList": [
+      "https://rpc-endurance.fusionist.io/"
+    ],
+    "coingeckoId": "endurance",
+    "explorer": "https://explorer.endurance.fusionist.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1750,
+    "key": "metall2",
+    "name": "MetalL2",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.metall2.com",
+    "rpcList": [
+      "https://rpc.metall2.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.metall2.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3338,
+    "key": "PEAQ",
+    "name": "Peaq",
+    "currency": "PEAQ",
+    "decimals": 18,
+    "rpc": "https://quicknode1.peaq.xyz",
+    "rpcList": [
+      "https://quicknode1.peaq.xyz",
+      "https://quicknode2.peaq.xyz",
+      "https://quicknode3.peaq.xyz"
+    ],
+    "coingeckoId": "peaq-2",
+    "explorer": "https://peaq.subscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 16507,
+    "key": "Genesys",
+    "name": "Genesys",
+    "currency": "GSYS",
+    "decimals": 18,
+    "rpc": "https://rpc.genesys.network",
+    "rpcList": [
+      "https://rpc.genesys.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://gchainexplorer.genesys.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5112,
+    "key": "ham",
+    "name": "Ham",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.ham.fun",
+    "rpcList": [
+      "https://rpc.ham.fun"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.ham.fun",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 228,
+    "key": "fhe",
+    "name": "Mind Network",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc-mainnet.mindnetwork.xyz",
+    "rpcList": [
+      "https://rpc-mainnet.mindnetwork.xyz"
+    ],
+    "coingeckoId": "mind-network",
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7225878,
+    "key": "saakuru",
+    "name": "Saakuru",
+    "currency": "OAS",
+    "decimals": 18,
+    "rpc": "https://rpc.saakuru.network",
+    "rpcList": [
+      "https://rpc.saakuru.network"
+    ],
+    "coingeckoId": "saakuru-labs",
+    "explorer": "https://explorer.saakuru.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 47763,
+    "key": "neox-mainnet",
+    "name": "Neo X Mainnet",
+    "currency": "GAS",
+    "decimals": 18,
+    "rpc": "https://mainnet-1.rpc.banelabs.org",
+    "rpcList": [
+      "https://mainnet-1.rpc.banelabs.org",
+      "https://mainnet-2.rpc.banelabs.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://xexplorer.neo.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 52014,
+    "key": "etn-mainnet",
+    "name": "Electroneum",
+    "currency": "ETN",
+    "decimals": 18,
+    "rpc": "https://rpc.electroneum.com",
+    "rpcList": [
+      "https://rpc.electroneum.com",
+      "https://rpc.ankr.com/electroneum"
+    ],
+    "coingeckoId": "electroneum",
+    "explorer": "https://blockexplorer.electroneum.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8668,
+    "key": "hela",
+    "name": "HeLa",
+    "currency": "HLUSD",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.helachain.com",
+    "rpcList": [
+      "https://mainnet-rpc.helachain.com"
+    ],
+    "coingeckoId": "hela",
+    "explorer": "https://mainnet-blockexplorer.helachain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 698,
+    "key": "Matchain",
+    "name": "Matchain",
+    "currency": "BNB",
+    "decimals": 18,
+    "rpc": "https://rpc.matchain.io",
+    "rpcList": [
+      "https://rpc.matchain.io"
+    ],
+    "coingeckoId": "matchain",
+    "explorer": "https://matchscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 360,
+    "key": "shape",
+    "name": "Shape",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://mainnet.shape.network",
+    "rpcList": [
+      "https://mainnet.shape.network",
+      "https://shape-mainnet.g.alchemy.com/public"
+    ],
+    "coingeckoId": "shape",
+    "explorer": "https://shapescan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 42420,
+    "key": "assetchain",
+    "name": "Asset Chain",
+    "currency": "RWA",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.assetchain.org",
+    "rpcList": [
+      "https://mainnet-rpc.assetchain.org"
+    ],
+    "coingeckoId": "xend-finance",
+    "explorer": "https://scan.assetchain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 31612,
+    "key": "mezo",
+    "name": "Mezo",
+    "currency": "BTC",
+    "decimals": 18,
+    "rpc": "https://rpc_evm-mezo.imperator.co",
+    "rpcList": [
+      "https://rpc_evm-mezo.imperator.co",
+      "https://mezo-mainnet.boar.network",
+      "https://mainnet.mezo.public.validationcloud.io",
+      "https://rpc-internal.mezo.org"
+    ],
+    "coingeckoId": "mezo",
+    "explorer": "https://explorer.mezo.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 25363,
+    "key": "fluent",
+    "name": "Fluent",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.fluent.xyz",
+    "rpcList": [
+      "https://rpc.fluent.xyz"
+    ],
+    "coingeckoId": "fluent-network",
+    "explorer": "https://fluentscan.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 207,
+    "key": "vc",
+    "name": "VinuChain",
+    "currency": "VC",
+    "decimals": 18,
+    "rpc": "https://rpc.vinuchain.org",
+    "rpcList": [
+      "https://rpc.vinuchain.org"
+    ],
+    "coingeckoId": "vinuchain",
+    "explorer": "https://vinuexplorer.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 72957,
+    "key": "rayls",
+    "name": "Rayls",
+    "currency": "USDr",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.rayls.com",
+    "rpcList": [
+      "https://mainnet-rpc.rayls.com"
+    ],
+    "coingeckoId": "rayls",
+    "explorer": "https://explorer.rayls.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4158,
+    "key": "crossfi",
+    "name": "CrossFi",
+    "currency": "XFI",
+    "decimals": 18,
+    "rpc": "https://rpc.mainnet.ms/",
+    "rpcList": [
+      "https://rpc.mainnet.ms/"
+    ],
+    "coingeckoId": "crossfi-2",
+    "explorer": "https://xfiscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 181,
+    "key": "water",
+    "name": "Waterfall",
+    "currency": "WATER",
+    "decimals": 18,
+    "rpc": "https://rpc.waterfall.network/",
+    "rpcList": [
+      "https://rpc.waterfall.network/"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5887,
+    "key": "dukong",
+    "name": "Mantra",
+    "currency": "MANTRA",
+    "decimals": 18,
+    "rpc": "https://evm.dukong.mantrachain.io",
+    "rpcList": [
+      "https://evm.dukong.mantrachain.io"
+    ],
+    "coingeckoId": "mantra",
+    "explorer": "https://mantrascan.io/dukong",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 543210,
+    "key": "zero-network",
+    "name": "Zero Network",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.zerion.io/v1/zero",
+    "rpcList": [
+      "https://rpc.zerion.io/v1/zero"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.zero.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 690,
+    "key": "redstone",
+    "name": "Redstone",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.redstonechain.com",
+    "rpcList": [
+      "https://rpc.redstonechain.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.redstone.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 322202,
+    "key": "parex",
+    "name": "Parex",
+    "currency": "PRX",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.parex.network",
+    "rpcList": [
+      "https://mainnet-rpc.parex.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.parex.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 105105,
+    "key": "xertra",
+    "name": "Stratis",
+    "currency": "STRAX",
+    "decimals": 18,
+    "rpc": "https://rpc.xertra.com",
+    "rpcList": [
+      "https://rpc.xertra.com"
+    ],
+    "coingeckoId": "stratis",
+    "explorer": "https://explorer.xertra.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2355,
+    "key": "silicon-zk",
+    "name": "Silicon zkEVM",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.silicon.network",
+    "rpcList": [
+      "https://rpc.silicon.network",
+      "https://silicon-mainnet.nodeinfra.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scope.silicon.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 20250217,
+    "key": "xp",
+    "name": "Xphere",
+    "currency": "XP",
+    "decimals": 18,
+    "rpc": "https://en-bkk.x-phere.com",
+    "rpcList": [
+      "https://en-bkk.x-phere.com"
+    ],
+    "coingeckoId": "xphere",
+    "explorer": "https://xp.tamsa.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 6880,
+    "key": "mtt-network",
+    "name": "MTT Network",
+    "currency": "MTT",
+    "decimals": 18,
+    "rpc": "https://evm-rpc.mtt.network",
+    "rpcList": [
+      "https://evm-rpc.mtt.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.mtt.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 18686,
+    "key": "MXCzkEVM",
+    "name": "Moonchain",
+    "currency": "MXC",
+    "decimals": 18,
+    "rpc": "https://rpc.mxc.com",
+    "rpcList": [
+      "https://rpc.mxc.com"
+    ],
+    "coingeckoId": "moonchain",
+    "explorer": "https://explorer.moonchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8811,
+    "key": "haven1",
+    "name": "Haven1",
+    "currency": "H1",
+    "decimals": 18,
+    "rpc": "https://rpc.haven1.org",
+    "rpcList": [
+      "https://rpc.haven1.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.haven1.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 41455,
+    "key": "aleph-zero",
+    "name": "Aleph Zero EVM",
+    "currency": "AZERO",
+    "decimals": 18,
+    "rpc": "https://rpc.alephzero.raas.gelato.cloud",
+    "rpcList": [
+      "https://rpc.alephzero.raas.gelato.cloud"
+    ],
+    "coingeckoId": "aleph-zero",
+    "explorer": "https://evm-explorer.alephzero.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1440000,
+    "key": "xrplevm",
+    "name": "XRPL EVM",
+    "currency": "XRP",
+    "decimals": 18,
+    "rpc": "https://rpc.xrplevm.org",
+    "rpcList": [
+      "https://rpc.xrplevm.org"
+    ],
+    "coingeckoId": "ripple",
+    "explorer": "https://explorer.xrplevm.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 18888,
+    "key": "titan_tkx",
+    "name": "Titan",
+    "currency": "TKX",
+    "decimals": 18,
+    "rpc": "https://titan-json-rpc.titanlab.io",
+    "rpcList": [
+      "https://titan-json-rpc.titanlab.io",
+      "https://titan-json-rpc-tokyo.titanlab.io",
+      "https://titan-json-rpc-seoul.titanlab.io",
+      "https://titan-json-rpc-hongkong.titanlab.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://tkxscan.io/Titan",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1907,
+    "key": "bitci",
+    "name": "Bitcichain",
+    "currency": "BITCI",
+    "decimals": 18,
+    "rpc": "https://rpc.bitci.com",
+    "rpcList": [
+      "https://rpc.bitci.com"
+    ],
+    "coingeckoId": "bitcicoin",
+    "explorer": "https://bitciexplorer.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 173,
+    "key": "eni",
+    "name": "ENI",
+    "currency": "EGAS",
+    "decimals": 18,
+    "rpc": "https://rpc.eniac.network",
+    "rpcList": [
+      "https://rpc.eniac.network",
+      "https://rpc1.eniac.network",
+      "https://rpc2.eniac.network",
+      "https://enirpc.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.eniac.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 484,
+    "key": "CampMainnet",
+    "name": "Camp",
+    "currency": "CAMP",
+    "decimals": 18,
+    "rpc": "https://rpc.camp.raas.gelato.cloud",
+    "rpcList": [
+      "https://rpc.camp.raas.gelato.cloud"
+    ],
+    "coingeckoId": "camp-network",
+    "explorer": "https://camp.cloud.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 140,
+    "key": "ERA",
+    "name": "Eteria",
+    "currency": "ERA",
+    "decimals": 18,
+    "rpc": "https://mainnet.eteria.io/v1",
+    "rpcList": [
+      "https://mainnet.eteria.io/v1"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.eteria.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 10088,
+    "key": "GateLayer",
+    "name": "GateLayer",
+    "currency": "GT",
+    "decimals": 18,
+    "rpc": "https://gatelayer-mainnet.gatenode.cc",
+    "rpcList": [
+      "https://gatelayer-mainnet.gatenode.cc"
+    ],
+    "coingeckoId": "gatechain-token",
+    "explorer": "https://www.gatescan.org/gatelayer",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3721,
+    "key": "XOC",
+    "name": "Xone Chain",
+    "currency": "XOC",
+    "decimals": 18,
+    "rpc": "https://rpc.xone.org",
+    "rpcList": [
+      "https://rpc.xone.org",
+      "https://rpc-node-1.xone.org",
+      "https://rpc-node-2.xone.org",
+      "https://rpc-node-3.xone.org"
+    ],
+    "coingeckoId": "xoc",
+    "explorer": "https://xonescan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 38833,
+    "key": "igra",
+    "name": "Igra",
+    "currency": "iKAS",
+    "decimals": 18,
+    "rpc": "https://rpc.igralabs.com:8545",
+    "rpcList": [
+      "https://rpc.igralabs.com:8545"
+    ],
+    "coingeckoId": "igra",
+    "explorer": "https://explorer.igralabs.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 97477,
+    "key": "doma",
+    "name": "Doma",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.doma.xyz",
+    "rpcList": [
+      "https://rpc.doma.xyz"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.doma.xyz",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 612055,
+    "key": "one",
+    "name": "CROSS",
+    "currency": "ONE",
+    "decimals": 18,
+    "rpc": "https://mainnet.onechain.nexus:22001",
+    "rpcList": [
+      "https://mainnet.onechain.nexus:22001"
+    ],
+    "coingeckoId": "cross-2",
+    "explorer": "https://explorer.onechain.nexus/612055",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 4048,
+    "key": "GANchain",
+    "name": "GANchain",
+    "currency": "GPU",
+    "decimals": 18,
+    "rpc": "https://rpc.gpu.net",
+    "rpcList": [
+      "https://rpc.gpu.net"
+    ],
+    "coingeckoId": "gpunet",
+    "explorer": "https://ganscan.gpu.net",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 81,
+    "key": "joc",
+    "name": "JOC",
+    "currency": "JOC",
+    "decimals": 18,
+    "rpc": "https://rpc-1.japanopenchain.org:8545",
+    "rpcList": [
+      "https://rpc-1.japanopenchain.org:8545",
+      "https://rpc-2.japanopenchain.org:8545",
+      "https://rpc-3.japanopenchain.org"
+    ],
+    "coingeckoId": "japan-open-chain",
+    "explorer": "https://explorer.japanopenchain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 329,
+    "key": "virbicoin",
+    "name": "VirBiCoin",
+    "currency": "VBC",
+    "decimals": 18,
+    "rpc": "https://rpc.digitalregion.jp",
+    "rpcList": [
+      "https://rpc.digitalregion.jp"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.digitalregion.jp",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 258432,
+    "key": "ALTHEA",
+    "name": "Althea",
+    "currency": "ALTHEA",
+    "decimals": 18,
+    "rpc": "https://rpc.althea.zone",
+    "rpcList": [
+      "https://rpc.althea.zone"
+    ],
+    "coingeckoId": "althea",
+    "explorer": "https://mintscan.io/althea",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 97741,
+    "key": "pepuv2",
+    "name": "Pepu",
+    "currency": "PEPU",
+    "decimals": 18,
+    "rpc": "https://rpc-pepu-v2-mainnet-0.t.conduit.xyz",
+    "rpcList": [
+      "https://rpc-pepu-v2-mainnet-0.t.conduit.xyz"
+    ],
+    "coingeckoId": "pepe-unchained-2",
+    "explorer": "https://pepuscan.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 171717,
+    "key": "wadzchain-mainnet",
+    "name": "W Chain",
+    "currency": "WCO",
+    "decimals": 18,
+    "rpc": "https://rpc.wadzchain.io",
+    "rpcList": [
+      "https://rpc.wadzchain.io"
+    ],
+    "coingeckoId": "wadzcoin",
+    "explorer": "https://scan.wadzchain.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3030,
+    "key": "BCHYPER",
+    "name": "BCHyper",
+    "currency": "VTCN",
+    "decimals": 18,
+    "rpc": "https://mainapi.bchscan.io",
+    "rpcList": [
+      "https://mainapi.bchscan.io",
+      "https://datahub-asia02.bchscan.io/"
+    ],
+    "coingeckoId": "versatize-coin",
+    "explorer": "https://bchscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 61803,
+    "key": "Etica",
+    "name": "Etica",
+    "currency": "EGAZ",
+    "decimals": 18,
+    "rpc": "https://eticamainnet.eticascan.org",
+    "rpcList": [
+      "https://eticamainnet.eticascan.org",
+      "https://eticamainnet.eticaprotocol.org"
+    ],
+    "coingeckoId": "etica",
+    "explorer": "https://eticascan.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7119,
+    "key": "srx",
+    "name": "Sentrix",
+    "currency": "SRX",
+    "decimals": 18,
+    "rpc": "https://rpc.sentrixchain.com",
+    "rpcList": [
+      "https://rpc.sentrixchain.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://scan.sentrixchain.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 8472,
+    "key": "mrt",
+    "name": "MyRx",
+    "currency": "MRT",
+    "decimals": 18,
+    "rpc": "https://rpc.myrxwallet.io",
+    "rpcList": [
+      "https://rpc.myrxwallet.io"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.myrxwallet.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 36900,
+    "key": "adi",
+    "name": "ADI",
+    "currency": "ADI",
+    "decimals": 18,
+    "rpc": "https://rpc.adifoundation.ai",
+    "rpcList": [
+      "https://rpc.adifoundation.ai"
+    ],
+    "coingeckoId": "adi-token",
+    "explorer": "https://explorer.adifoundation.ai",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 714,
+    "key": "eden",
+    "name": "Eden",
+    "currency": "TIA",
+    "decimals": 18,
+    "rpc": "https://rpc.eden.gateway.fm",
+    "rpcList": [
+      "https://rpc.eden.gateway.fm"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://eden.blockscout.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 1983,
+    "key": "krown",
+    "name": "Krown Network",
+    "currency": "KROWN",
+    "decimals": 18,
+    "rpc": "https://mainnet.krown.network",
+    "rpcList": [
+      "https://mainnet.krown.network",
+      "https://mainnet1.krown.network"
+    ],
+    "coingeckoId": "krown-network",
+    "explorer": "https://explorer.krown.network",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2121217,
+    "key": "ggchain",
+    "name": "GGCHAIN",
+    "currency": "GG",
+    "decimals": 18,
+    "rpc": "https://rpc.gghyper.net",
+    "rpcList": [
+      "https://rpc.gghyper.net"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.gghyper.net",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 3344,
+    "key": "PentagonChain",
+    "name": "Pentagon Chain",
+    "currency": "PC",
+    "decimals": 18,
+    "rpc": "https://rpc.pentagon.games",
+    "rpcList": [
+      "https://rpc.pentagon.games"
+    ],
+    "coingeckoId": "pentagon-chain",
+    "explorer": "https://explorer.pentagon.games",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 2,
+    "key": "exp",
+    "name": "Expanse Network",
+    "currency": "EXP",
+    "decimals": 18,
+    "rpc": "https://node.expanse.tech",
+    "rpcList": [
+      "https://node.expanse.tech"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 5,
+    "key": "gor",
+    "name": "Goerli",
+    "currency": "ETH",
+    "decimals": 18,
+    "rpc": "https://rpc.goerli.mudit.blog/",
+    "rpcList": [
+      "https://rpc.goerli.mudit.blog/",
+      "https://ethereum-goerli-rpc.publicnode.com",
+      "https://goerli.gateway.tenderly.co"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://goerli.etherscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 7,
+    "key": "tch",
+    "name": "ThaiChain",
+    "currency": "TCH",
+    "decimals": 18,
+    "rpc": "https://rpc.dome.cloud",
+    "rpcList": [
+      "https://rpc.dome.cloud",
+      "https://rpc.thaichain.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://exp.thaichain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 11,
+    "key": "meta",
+    "name": "Metadium Mainnet",
+    "currency": "META",
+    "decimals": 18,
+    "rpc": "https://api.metadium.com/prod",
+    "rpcList": [
+      "https://api.metadium.com/prod"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.metadium.com",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 15,
+    "key": "diode",
+    "name": "Diode Prenet",
+    "currency": "DIODE",
+    "decimals": 18,
+    "rpc": "https://prenet.diode.io:8443/",
+    "rpcList": [
+      "https://prenet.diode.io:8443/"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 17,
+    "key": "tfi",
+    "name": "ThaiChain 2.0 ThaiFi",
+    "currency": "TFI",
+    "decimals": 18,
+    "rpc": "https://rpc.thaifi.com",
+    "rpcList": [
+      "https://rpc.thaifi.com"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 24,
+    "key": "kardiachain",
+    "name": "KardiaChain Mainnet",
+    "currency": "KAI",
+    "decimals": 18,
+    "rpc": "https://rpc.kardiachain.io",
+    "rpcList": [
+      "https://rpc.kardiachain.io"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 27,
+    "key": "shib",
+    "name": "ShibaChain",
+    "currency": "SHIB",
+    "decimals": 18,
+    "rpc": "https://rpc.shibchain.org",
+    "rpcList": [
+      "https://rpc.shibchain.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://exp.shibchain.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 29,
+    "key": "L1",
+    "name": "Genesis L1",
+    "currency": "L1",
+    "decimals": 18,
+    "rpc": "https://rpc.genesisl1.org",
+    "rpcList": [
+      "https://rpc.genesisl1.org"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.genesisl1.org",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 33,
+    "key": "GooD",
+    "name": "GoodData Mainnet",
+    "currency": "GooD",
+    "decimals": 18,
+    "rpc": "https://rpc.goodata.io",
+    "rpcList": [
+      "https://rpc.goodata.io"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 34,
+    "key": "scai",
+    "name": "SecureChain Mainnet",
+    "currency": "SCAI",
+    "decimals": 18,
+    "rpc": "https://mainnet-rpc.scai.network",
+    "rpcList": [
+      "https://mainnet-rpc.scai.network"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.securechain.ai",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 35,
+    "key": "tbwg",
+    "name": "TBWG Chain",
+    "currency": "TBG",
+    "decimals": 18,
+    "rpc": "https://rpc.tbwg.io",
+    "rpcList": [
+      "https://rpc.tbwg.io"
+    ],
+    "coingeckoId": null,
+    "explorer": null,
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 36,
+    "key": "dx",
+    "name": "Dxchain Mainnet",
+    "currency": "DX",
+    "decimals": 18,
+    "rpc": "https://mainnet.dxchain.com",
+    "rpcList": [
+      "https://mainnet.dxchain.com"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://dxscan.io",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  },
+  {
+    "chainId": 37,
+    "key": "conx",
+    "name": "CONX Chain",
+    "currency": "XPLA",
+    "decimals": 18,
+    "rpc": "https://dimension-evm-rpc.xpla.dev",
+    "rpcList": [
+      "https://dimension-evm-rpc.xpla.dev"
+    ],
+    "coingeckoId": null,
+    "explorer": "https://explorer.conx.xyz/mainnet",
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "hasSwapBridge": false,
+    "category": "EVM Chain"
+  }
+]
